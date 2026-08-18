@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나의 음악가 MBTI는?</title>
+<style>
+  :root{
+    --cream:#faf6ee;
+    --paper:#fffdf8;
+    --ink:#2f2a26;
+    --line:#3d3630;
+    --accent:#8a4a3d;
+    --accent-light:#c98a76;
+    --gold:#b8945f;
+    --soft:#e8ddc9;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background:
+      repeating-linear-gradient(
+        var(--cream) 0px, var(--cream) 42px,
+        #e9e0cd 42px, #e9e0cd 43px
+      );
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .card{
+    width:100%;
+    max-width:640px;
+    background:var(--paper);
+    border:1px solid var(--soft);
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(60,45,30,0.12);
+    padding:32px 28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:"♪";
+    position:absolute;
+    top:-30px;
+    right:-10px;
+    font-size:160px;
+    color:var(--soft);
+    opacity:0.5;
+    z-index:0;
+    transform:rotate(10deg);
+  }
+  .inner{position:relative;z-index:1;}
+
+  /* 시작 화면 */
+  #start-screen h1{
+    font-size:1.7rem;
+    margin:0 0 8px;
+    color:var(--accent);
+    text-align:center;
+  }
+  #start-screen p{
+    text-align:center;
+    color:#6b6258;
+    line-height:1.6;
+    margin:0 0 26px;
+    font-size:0.95rem;
+  }
+  .btn{
+    display:block;
+    width:100%;
+    padding:14px 20px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    font-size:1.05rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .2s, transform .1s;
+  }
+  .btn:hover{background:#733d32;}
+  .btn:active{transform:scale(0.98);}
+  .btn.secondary{
+    background:transparent;
+    color:var(--accent);
+    border:1.5px solid var(--accent);
+    margin-top:10px;
+  }
+  .btn.secondary:hover{background:#f5ece5;}
+
+  /* 진행바 */
+  .progress-wrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  .progress-bar{
+    flex:1;
+    height:8px;
+    background:var(--soft);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--gold), var(--accent));
+    width:0%;
+    transition:width .3s ease;
+  }
+  .progress-text{
+    font-size:0.85rem;
+    color:#7a7166;
+    white-space:nowrap;
+    min-width:52px;
+    text-align:right;
+  }
+
+  /* 질문 화면 */
+  #question-screen{display:none;}
+  .q-text{
+    font-size:1.2rem;
+    font-weight:700;
+    margin:0 0 20px;
+    line-height:1.5;
+    color:var(--ink);
+  }
+  .option{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    width:100%;
+    text-align:left;
+    padding:16px 16px;
+    margin-bottom:12px;
+    background:#fff;
+    border:1.5px solid var(--soft);
+    border-radius:12px;
+    cursor:pointer;
+    font-size:1rem;
+    color:var(--ink);
+    transition:border-color .15s, background .15s;
+  }
+  .option:hover{
+    border-color:var(--accent-light);
+    background:#fdf6f1;
+  }
+  .option.selected{
+    border-color:var(--accent);
+    background:#fdf0e8;
+  }
+  .option.selected .badge{
+    background:var(--accent);
+    color:#fff;
+  }
+  .option .badge{
+    flex:0 0 auto;
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    background:var(--soft);
+    color:var(--accent);
+    font-weight:700;
+    font-size:0.85rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .nav-row{
+    display:flex;
+    justify-content:space-between;
+    margin-top:20px;
+  }
+  .link-btn{
+    background:none;
+    border:none;
+    color:#8a8074;
+    font-size:0.9rem;
+    cursor:pointer;
+    padding:8px 4px;
+  }
+  .link-btn:hover{color:var(--accent);}
+  .link-btn:disabled{opacity:0.3;cursor:default;}
+
+  /* 결과 화면 */
+  #result-screen{display:none; text-align:center;}
+  .result-type{
+    font-size:0.95rem;
+    letter-spacing:2px;
+    color:var(--gold);
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .result-name{
+    font-size:1.6rem;
+    font-weight:800;
+    color:var(--accent);
+    margin:0 0 4px;
+  }
+  .result-piece{
+    font-size:0.95rem;
+    color:#8a8074;
+    margin-bottom:18px;
+    font-style:italic;
+  }
+  .result-desc{
+    text-align:left;
+    background:#fdf6f1;
+    border-left:4px solid var(--accent-light);
+    padding:16px 18px;
+    border-radius:8px;
+    line-height:1.75;
+    font-size:0.98rem;
+    margin-bottom:18px;
+  }
+  .rec-box{
+    text-align:left;
+    background:#f3f0e6;
+    border-radius:8px;
+    padding:14px 18px;
+    margin-bottom:24px;
+  }
+  .rec-box .rec-title{
+    font-weight:700;
+    color:var(--accent);
+    font-size:0.9rem;
+    margin-bottom:8px;
+  }
+  .rec-box ul{margin:0;padding-left:20px;line-height:1.8;font-size:0.95rem;}
+
+  .result-divider{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:22px 0 16px;
+    color:#b0a68f;
+    font-size:0.85rem;
+  }
+  .result-divider::before,
+  .result-divider::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:var(--soft);
+  }
+  .kpop-card{
+    text-align:left;
+    background:#fbf3f6;
+    border:1.5px solid #f0d9e2;
+    border-radius:12px;
+    padding:16px 18px;
+    margin-bottom:18px;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+  }
+  .kpop-card .kpop-emoji{font-size:1.6rem;line-height:1;}
+  .kpop-card .kpop-name{
+    font-weight:800;
+    font-size:1.1rem;
+    color:#b8557d;
+    margin-bottom:2px;
+  }
+  .kpop-card .kpop-piece{
+    font-size:0.85rem;
+    color:#8a8074;
+    font-style:italic;
+    margin-bottom:6px;
+  }
+  .kpop-card .kpop-desc{
+    font-size:0.92rem;
+    line-height:1.6;
+    color:var(--ink);
+  }
+
+  .name-input{
+    width:100%;
+    padding:13px 16px;
+    margin-bottom:14px;
+    border:1.5px solid var(--soft);
+    border-radius:12px;
+    font-size:1rem;
+    font-family:inherit;
+    color:var(--ink);
+    background:#fff;
+  }
+  .name-input:focus{
+    outline:none;
+    border-color:var(--accent-light);
+  }
+  .name-input.input-error{
+    border-color:#c0473e;
+    background:#fdf2f1;
+  }
+  .field-error{
+    color:#c0473e;
+    font-size:0.82rem;
+    margin:-10px 0 12px;
+    display:none;
+  }
+  .save-status{
+    font-size:0.8rem;
+    color:#a89c88;
+    margin-top:-8px;
+    margin-bottom:18px;
+  }
+
+  @media (max-width:480px){
+    .card{padding:24px 18px;}
+    #start-screen h1{font-size:1.4rem;}
+    .q-text{font-size:1.05rem;}
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="inner">
+
+    <!-- 시작 화면 -->
+    <div id="start-screen">
+      <h1>🎵 나의 음악가 MBTI는?</h1>
+      <p>32개의 질문에 답하고<br>나와 닮은 음악가를 찾아보세요.</p>
+      <input type="text" id="student-id" class="name-input" placeholder="학번을 입력하세요">
+      <input type="text" id="student-name" class="name-input" placeholder="이름을 입력하세요">
+      <div class="field-error" id="field-error">학번과 이름을 모두 입력해 주세요.</div>
+      <button class="btn" onclick="startQuiz()">시작하기</button>
+    </div>
+
+    <!-- 질문 화면 -->
+    <div id="question-screen">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-text" id="progress-text">1 / 32</div>
+      </div>
+      <p class="q-text" id="q-text"></p>
+      <button class="option" id="opt-a" onclick="answer('A')">
+        <span class="badge">A</span><span id="opt-a-text"></span>
+      </button>
+      <button class="option" id="opt-b" onclick="answer('B')">
+        <span class="badge">B</span><span id="opt-b-text"></span>
+      </button>
+      <div class="nav-row">
+        <button class="link-btn" id="back-btn" onclick="goBack()">← 이전 질문</button>
+      </div>
+    </div>
+
+    <!-- 결과 화면 -->
+    <div id="result-screen">
+      <div class="result-type" id="result-type"></div>
+      <div class="result-name" id="result-name"></div>
+      <div class="result-piece" id="result-piece"></div>
+      <div class="result-desc" id="result-desc"></div>
+
+      <div class="result-divider">K-POP으로 보면?</div>
+      <div class="kpop-card">
+        <div class="kpop-emoji">💗</div>
+        <div>
+          <div class="kpop-name" id="kpop-name"></div>
+          <div class="kpop-piece" id="kpop-piece"></div>
+          <div class="kpop-desc" id="kpop-desc"></div>
+        </div>
+      </div>
+
+      <div class="rec-box">
+        <div class="rec-title">🎧 이런 음악을 들어보세요</div>
+        <ul id="rec-list"></ul>
+      </div>
+      <button class="btn" onclick="restart()">다시하기</button>
+      <div class="save-status" id="save-status" style="margin-top:12px;"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ===== 문항 데이터 =====
+   axis: 'EI' | 'SN' | 'TF' | 'JP'
+   a: A 선택 시 부여 알파벳, b: B 선택 시 부여 알파벳 */
+const questions = [
+  // E / I
+  {axis:'EI', q:'합주할 때 나는?', a:'다른 친구 소리를 들으며 맞춘다', b:'내 파트 연주에 집중한다', aLetter:'E', bLetter:'I'},
+  {axis:'EI', q:'음악실에서 나는?', a:'친구들과 함께 연습하는 게 즐겁다', b:'혼자 연습할 때 집중이 잘 된다', aLetter:'E', bLetter:'I'},
+  {axis:'EI', q:'새로운 곡을 들으면 나는?', a:'친구에게 추천하고 얘기 나누고 싶다', b:'플리에 저장하고 혼자 감상한다', aLetter:'E', bLetter:'I'},
+  {axis:'EI', q:'발표나 공연을 앞둔 나는?', a:'빨리 무대를 선보이고 싶다', b:'무대 전 마음을 가다듬는 시간이 많이 필요하다', aLetter:'E', bLetter:'I'},
+  {axis:'EI', q:'음악 감상 후 나는?', a:'느낀 점을 나누고 싶다', b:'느낀 점을 마음에 정리한다', aLetter:'E', bLetter:'I'},
+  {axis:'EI', q:'새 악기를 배울 때 나는?', a:'친구들과 함께 배우는 게 좋다', b:'혼자 차근차근 익히는 게 좋다', aLetter:'E', bLetter:'I'},
+  {axis:'EI', q:'연주를 할 때 나는?', a:'다른 사람과 함께 하는 게 재미있다', b:'나만의 세계에 빠져드는 게 좋다', aLetter:'E', bLetter:'I'},
+  {axis:'EI', q:'모둠 활동에서 나는?', a:'먼저 나서서 활동을 이끈다', b:'묵묵히 맡은 바 내 역할을 해낸다', aLetter:'E', bLetter:'I'},
+
+  // S / N
+  {axis:'SN', q:'악보를 볼 때 나는?', a:'적힌 대로 정확히 연주하려 한다', b:'내 느낌대로 살짝 바꿔 연주하고 싶다', aLetter:'S', bLetter:'N'},
+  {axis:'SN', q:'곡을 해석할 때 나는?', a:'작곡가의 의도를 그대로 살리고 싶다', b:'나만의 새로운 해석을 시도하고 싶다', aLetter:'S', bLetter:'N'},
+  {axis:'SN', q:'음악을 공부할 때 나는?', a:'규칙과 원리를 순서대로 익힌다', b:'어울리는 소리를 직관적으로 찾는다', aLetter:'S', bLetter:'N'},
+  {axis:'SN', q:'음악을 감상할 때 나는?', a:'연주 기법이나 정확도에 주목한다', b:'곡이 주는 느낌이나 이야기에 주목한다', aLetter:'S', bLetter:'N'},
+  {axis:'SN', q:'음악을 만들 때 나는?', a:'기존의 곡을 참고해서 만들고 싶다', b:'떠오르는 아이디어를 자유롭게 펼치고 싶다', aLetter:'S', bLetter:'N'},
+  {axis:'SN', q:'새로운 장르를 접하면 나는?', a:'기존에 알던 장르와 비교한다', b:'낯선 느낌 자체를 즐긴다', aLetter:'S', bLetter:'N'},
+  {axis:'SN', q:'연주 실수를 했을 때 나는?', a:'정확히 어디서 틀렸는지 성찰한다', b:'전체 흐름이 괜찮았는지가 더 중요하다', aLetter:'S', bLetter:'N'},
+  {axis:'SN', q:'공연을 볼 때 나는?', a:'연주자의 음악성, 디테일을 관찰한다', b:'전체적인 분위기와 에너지에 집중한다', aLetter:'S', bLetter:'N'},
+
+  // T / F
+  {axis:'TF', q:'연주 중 박자가 안 맞으면 나는?', a:'원인을 찾고 분석하여 고친다', b:'분위기가 흐트러질까 걱정된다', aLetter:'T', bLetter:'F'},
+  {axis:'TF', q:'곡을 선택할 때 나는?', a:'음악의 구성이나 완성도를 기준으로 고른다', b:'마음에 감동을 주는지를 기준으로 고른다', aLetter:'T', bLetter:'F'},
+  {axis:'TF', q:'친구의 연주가 마음에 들지 않았을 때 나는?', a:'잘된 점과 고칠 점을 구체적으로 짚어준다', b:'노력한 연주에 박수를 보낸다', aLetter:'T', bLetter:'F'},
+  {axis:'TF', q:'음악 이론을 배울 때 나는?', a:'배운 규칙이 딱 맞아떨어질 때 재미있다', b:'음악 이론보다는 마음을 울리는 느낌이 더 중요하다', aLetter:'T', bLetter:'F'},
+  {axis:'TF', q:'수행 평가를 볼 때 나는?', a:'평가 기준에 따라 객관적으로 정확하게 평가받고 싶다', b:'기준에 못 미치더라도 노력한 점도 함께 평가받고 싶다', aLetter:'T', bLetter:'F'},
+  {axis:'TF', q:'가사가 있는 음악을 들을 때 나는?', a:'멜로디 구조와 짜임새가 먼저 들린다', b:'가사가 전하는 감정에 먼저 몰입한다', aLetter:'T', bLetter:'F'},
+  {axis:'TF', q:'팀 연주에서 의견이 갈리면 나는?', a:'의견들 중 가장 합리적인 방법으로 정한다', b:'모두가 적당히 만족할 수 있는 타협점을 찾는다', aLetter:'T', bLetter:'F'},
+  {axis:'TF', q:'곡을 연주할 때 나는?', a:'악보를 정확히 표현하는 데 집중한다', b:'작곡가의 감정을 표현하는 데 집중한다', aLetter:'T', bLetter:'F'},
+
+  // J / P
+  {axis:'JP', q:'연습 계획을 세울 때 나는?', a:'차시별 계획표를 만들어 연습한다', b:'그때그때 하고 싶은 만큼 연습한다', aLetter:'J', bLetter:'P'},
+  {axis:'JP', q:'공연을 준비할 때 나는?', a:'미리 공연 모습과 동선을 이미지 트레이닝한다', b:'무대에서 즉흥적으로 하는 게 공연의 즐거움이다', aLetter:'J', bLetter:'P'},
+  {axis:'JP', q:'곡을 연습할 때 나는?', a:'처음부터 끝까지 순서대로 익힌다', b:'마음에 드는 부분부터 자유롭게 연습한다', aLetter:'J', bLetter:'P'},
+  {axis:'JP', q:'수행평가를 준비할 때 나는?', a:'미리 준비를 끝내야 마음이 편하다', b:'제출 기한이 닥쳤을 때 집중력이 폭발한다', aLetter:'J', bLetter:'P'},
+  {axis:'JP', q:'수행평가를 할 때 나는?', a:'정해진 순서대로 진행하길 원한다', b:'상황에 따라 순서가 바뀌는 것도 좋다', aLetter:'J', bLetter:'P'},
+  {axis:'JP', q:'음악을 듣고 싶을 때 나는?', a:'알고 있는 플리 안에서 고른다', b:'그날 기분에 따라 곡을 고른다', aLetter:'J', bLetter:'P'},
+  {axis:'JP', q:'연주 연습을 할 때 나는?', a:'어느 정도 연습 목표를 정해두고 시작하는 게 편하다', b:'정해진 것 없이 연습하는 자체를 즐긴다', aLetter:'J', bLetter:'P'},
+  {axis:'JP', q:'악보 없이 연주할 때 나는?', a:'미리 외워두고 순서에 따라 연주한다', b:'떠오르는 대로 느낌에 따라 연주한다', aLetter:'J', bLetter:'P'},
+];
+questions.forEach((q, i) => { q.id = i + 1; }); // 원래 문항 번호(1~32) 부여 - 셔플되어도 번호 유지
+
+/* ===== 16유형 결과 데이터 ===== */
+const results = {
+  ISTJ:{name:'요한 제바스티안 바흐', piece:'브란덴부르크 협주곡 3번',
+    desc:'바흐처럼 정해진 원칙과 구조 안에서 완성도를 추구하는 타입이에요.<br>악보와 규칙을 존중하며 꾸준히 실력을 쌓아가는 성실함이 강점입니다.<br>치밀하게 짜인 곡을 연주할 때 가장 큰 만족감을 느껴요.',
+    rec:['바흐 - 무반주 첼로 모음곡 1번','바흐 - 골드베르크 변주곡'],
+    kpop:{name:'세븐틴', piece:'손오공', desc:'자체 작사·작곡과 칼같은 군무로 완성도를 끌어올리는 팀이에요.'}},
+  ISTP:{name:'지미 헨드릭스', piece:'Purple Haze',
+    desc:'헨드릭스처럼 손끝의 감각과 실험을 통해 새로운 소리를 찾아내는 타입이에요.<br>이론보다 직접 만져보고 시도하며 배우는 걸 좋아하죠.<br>혼자 몰입해서 악기를 탐구할 때 몰입도가 최고조에 달해요.',
+    rec:['Jimi Hendrix - Voodoo Child','Stevie Ray Vaughan - Pride and Joy'],
+    kpop:{name:'지드래곤(빅뱅)', piece:'삐딱하게', desc:'직접 곡을 만들고 실험적인 스타일을 거침없이 시도해요.'}},
+  ISFJ:{name:'프레데리크 쇼팽', piece:'녹턴 Op.9 No.2',
+    desc:'쇼팽처럼 섬세하고 서정적인 표현을 소중히 여기는 타입이에요.<br>화려함보다는 잔잔하고 진심 어린 울림을 추구합니다.<br>조용히, 그러나 깊이 있게 마음을 전하는 연주를 잘해요.',
+    rec:['쇼팽 - 녹턴 Op.20 No.1 (유작)','드뷔시 - 아라베스크 1번'],
+    kpop:{name:'아이유', piece:'밤편지', desc:'섬세한 가사와 따뜻한 목소리로 마음을 조용히 어루만져요.'}},
+  ISFP:{name:'클로드 드뷔시', piece:'달빛(Clair de Lune)',
+    desc:'드뷔시처럼 색채와 분위기로 음악을 그려내는 타입이에요.<br>정해진 틀보다 그 순간의 느낌과 감각을 따라가길 좋아하죠.<br>조용히 자신만의 감성 세계를 음악으로 표현해요.',
+    rec:['드뷔시 - 목신의 오후 전주곡','라벨 - 죽은 왕녀를 위한 파반느'],
+    kpop:{name:'태연', piece:'사계', desc:'꾸밈없이 담담하게 자신만의 감성을 노래해요.'}},
+  INFJ:{name:'루트비히 판 베토벤', piece:'교향곡 9번 「합창」',
+    desc:'베토벤처럼 깊은 내면의 신념을 음악으로 풀어내는 타입이에요.<br>혼자만의 시간 속에서 이상과 의미를 진지하게 고민합니다.<br>감정을 절제된 형식 안에 담아 강렬하게 전달해요.',
+    rec:['베토벤 - 피아노 소나타 14번 「월광」','베토벤 - 교향곡 5번 「운명」'],
+    kpop:{name:'RM(BTS)', piece:'Persona', desc:'철학적인 가사로 자신의 내면을 깊이 있게 탐구해요.'}},
+  INFP:{name:'비요크', piece:'Hyper-ballad',
+    desc:'비요크처럼 자신만의 독창적인 감성 세계를 가진 타입이에요.<br>틀에 얽매이지 않고 마음속 이야기를 솔직하게 표현합니다.<br>실험적인 소리에서도 진심 어린 감정을 담아내요.',
+    rec:['Björk - Jóga','Sigur Rós - Hoppípolla'],
+    kpop:{name:'헤이즈', piece:'저녁 하늘', desc:'꾸밈없이 자유롭고 솔직한 감성을 노래로 풀어내요.'}},
+  INTJ:{name:'이고르 스트라빈스키', piece:'봄의 제전',
+    desc:'스트라빈스키처럼 치밀하게 설계된 새로움을 추구하는 타입이에요.<br>기존 틀을 분석한 뒤 과감하게 자신만의 구조를 만들어냅니다.<br>깊이 몰두해 완성도 높은 결과를 만들어내는 힘이 있어요.',
+    rec:['스트라빈스키 - 페트루슈카','바르톡 - 현악기, 타악기와 첼레스타를 위한 음악'],
+    kpop:{name:'에스파', piece:'Next Level', desc:'세계관과 콘셉트를 치밀하게 설계해 새로운 걸 만들어내요.'}},
+  INTP:{name:'브라이언 이노', piece:'Music for Airports',
+    desc:'브라이언 이노처럼 소리 자체를 탐구하고 실험하는 타입이에요.<br>정답보다 "왜 이런 소리가 나는가"를 궁금해하죠.<br>혼자 이론과 아이디어를 파고들며 새로운 음악 개념을 만들어내요.',
+    rec:['Brian Eno - An Ending (Ascent)','Aphex Twin - Avril 14th'],
+    kpop:{name:'(여자)아이들', piece:'TOMBOY', desc:'직접 작사·작곡하며 자기만의 독창적인 스타일을 실험해요.'}},
+  ESTJ:{name:'게오르크 프리드리히 헨델', piece:'메시아 - 할렐루야',
+    desc:'헨델처럼 체계적으로 계획하고 무리를 이끄는 타입이에요.<br>합주나 합창에서 확실한 리더십을 발휘합니다.<br>정확한 완성도로 사람들에게 신뢰를 주는 연주를 해요.',
+    rec:['헨델 - 수상음악','헨델 - 왕궁의 불꽃놀이'],
+    kpop:{name:'엑소(EXO)', piece:'으르렁(Growl)', desc:'체계적인 시스템 안에서 완성도 높은 무대를 만들어요.'}},
+  ESTP:{name:'엘비스 프레슬리', piece:'Jailhouse Rock',
+    desc:'엘비스처럼 무대 위에서 에너지를 폭발시키는 타입이에요.<br>즉흥적인 순간을 두려워하지 않고 즐기죠.<br>관객과 함께 호흡하며 현장의 분위기를 이끌어가요.',
+    rec:['Elvis Presley - Hound Dog','Chuck Berry - Johnny B. Goode'],
+    kpop:{name:'화사', piece:'마리아', desc:'무대 위에서 거침없이 폭발적인 에너지를 뿜어내요.'}},
+  ESFJ:{name:'루치아노 파바로티', piece:'Nessun Dorma',
+    desc:'파바로티처럼 따뜻함과 정성으로 청중과 교감하는 타입이에요.<br>함께하는 사람들을 배려하며 조화를 중요하게 여깁니다.<br>진심이 담긴 목소리로 사람들의 마음을 움직여요.',
+    rec:['안드레아 보첼리 - Time to Say Goodbye','푸치니 - 「투란도트」 중'],
+    kpop:{name:'트와이스', piece:'TT', desc:'팬들과 다정하게 소통하며 밝은 에너지를 나눠줘요.'}},
+  ESFP:{name:'프레디 머큐리', piece:"Don't Stop Me Now",
+    desc:'프레디 머큐리처럼 무대 위에서 감정을 아낌없이 표현하는 타입이에요.<br>사람들과 함께 어울리며 그 순간을 최대한 즐깁니다.<br>화려하고 생동감 넘치는 에너지로 분위기를 사로잡아요.',
+    rec:['Queen - Bohemian Rhapsody','Queen - We Will Rock You'],
+    kpop:{name:'블랙핑크', piece:'How You Like That', desc:'화려한 퍼포먼스로 순식간에 무대를 사로잡아요.'}},
+  ENFJ:{name:'존 레논', piece:'Imagine',
+    desc:'존 레논처럼 음악으로 사람들을 연결하고 메시지를 전하는 타입이에요.<br>혼자만의 만족보다 함께 나누는 의미를 더 중요하게 여기죠.<br>따뜻한 진심으로 사람들에게 울림을 줍니다.',
+    rec:['The Beatles - Let It Be','Bob Marley - One Love'],
+    kpop:{name:'정국(방탄소년단)', piece:'Standing Next to You', desc:'따뜻한 진심으로 팀과 팬을 함께 이끌어가요.'}},
+  ENFP:{name:'루이 암스트롱', piece:'What a Wonderful World',
+    desc:'루이 암스트롱처럼 즉흥과 유쾌함으로 사람들에게 기쁨을 주는 타입이에요.<br>정해진 틀보다 그 순간의 영감을 자유롭게 따라갑니다.<br>주변 사람들과 함께 만들어가는 음악을 사랑해요.',
+    rec:['Louis Armstrong - La Vie En Rose','Ella Fitzgerald - Summertime'],
+    kpop:{name:'뉴진스', piece:'Super Shy', desc:'자유분방하고 톡톡 튀는 에너지로 즐거움을 전해요.'}},
+  ENTJ:{name:'리하르트 바그너', piece:'발퀴레의 기행',
+    desc:'바그너처럼 큰 그림을 그리고 강하게 밀고 나가는 타입이에요.<br>웅장한 목표를 세우고 사람들을 이끌어 완성해냅니다.<br>스케일이 크고 확신에 찬 음악을 만들어내요.',
+    rec:['바그너 - 「탄호이저」 서곡','구스타프 말러 - 교향곡 2번 「부활」'],
+    kpop:{name:'빅뱅', piece:'뱅뱅뱅', desc:'확신에 찬 카리스마로 무대를 압도적으로 장악해요.'}},
+  ENTP:{name:'볼프강 아마데우스 모차르트', piece:'터키 행진곡',
+    desc:'모차르트처럼 재기 넘치고 즉흥적인 아이디어가 샘솟는 타입이에요.<br>틀을 살짝 비틀며 새로운 시도를 즐깁니다.<br>가볍고 유쾌하게, 그러나 놀라운 완성도로 사람들을 놀라게 해요.',
+    rec:['모차르트 - 「피가로의 결혼」 서곡','모차르트 - 작은 별 변주곡'],
+    kpop:{name:'아이브(IVE)', piece:'I AM', desc:'재기 넘치고 자신감 있게 새로운 매력을 계속 보여줘요.'}},
+};
+
+/* ===== 구글 스프레드시트 연동 설정 =====
+   1. 구글 시트를 새로 만든다.
+   2. 확장 프로그램 > Apps Script 에 아래 코드를 붙여넣고 배포한다. (자세한 방법은 별도 안내 파일 참고)
+   3. 배포 후 나오는 웹 앱 URL을 아래 GOOGLE_SCRIPT_URL 자리에 붙여넣는다. */
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/library/d/1m-O1L3QpL3BfC1rhQbn2OPPDrOCXddxYQIVgcMfrbVc1z49Bngbz8PrB/2";
+
+function saveToSheet(payload){
+  const statusEl = document.getElementById('save-status');
+  if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.indexOf('http') !== 0){
+    if(statusEl) statusEl.textContent = ''; // 연동 미설정 시 조용히 통과
+    return;
+  }
+  if(statusEl) statusEl.textContent = '결과 저장 중...';
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors', // Apps Script 웹앱은 CORS 응답을 주지 않으므로 no-cors로 전송
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  }).then(() => {
+    if(statusEl) statusEl.textContent = '✓ 결과가 저장되었습니다';
+  }).catch(() => {
+    if(statusEl) statusEl.textContent = '결과 저장에 실패했어요 (연결을 확인해 주세요)';
+  });
+}
+
+let current = 0;
+let answers = []; // {axis, letter}
+let quizQuestions = []; // 매 판마다 랜덤으로 섞인 문항 순서
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz(){
+  const idInput = document.getElementById('student-id');
+  const nameInput = document.getElementById('student-name');
+  const errorEl = document.getElementById('field-error');
+  const idVal = idInput.value.trim();
+  const nameVal = nameInput.value.trim();
+
+  idInput.classList.toggle('input-error', idVal === '');
+  nameInput.classList.toggle('input-error', nameVal === '');
+
+  if(idVal === '' || nameVal === ''){
+    errorEl.style.display = 'block';
+    return; // 필수 입력이 없으면 시작하지 않음
+  }
+  errorEl.style.display = 'none';
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('question-screen').style.display = 'block';
+  current = 0;
+  answers = [];
+  quizQuestions = shuffle(questions); // 문항 순서 랜덤화
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q = quizQuestions[current];
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('opt-a-text').textContent = q.a;
+  document.getElementById('opt-b-text').textContent = q.b;
+  document.getElementById('progress-text').textContent = (current+1) + ' / ' + quizQuestions.length;
+  document.getElementById('progress-fill').style.width = ((current)/quizQuestions.length*100) + '%';
+  document.getElementById('back-btn').disabled = (current === 0);
+
+  // 이전에 선택했던 답변이 있으면 표시
+  const optA = document.getElementById('opt-a');
+  const optB = document.getElementById('opt-b');
+  optA.classList.remove('selected');
+  optB.classList.remove('selected');
+  const saved = answers[current];
+  if(saved){
+    if(saved.letter === q.aLetter) optA.classList.add('selected');
+    else if(saved.letter === q.bLetter) optB.classList.add('selected');
+  }
+}
+
+function answer(choice){
+  const q = quizQuestions[current];
+  const letter = choice === 'A' ? q.aLetter : q.bLetter;
+  answers[current] = {id:q.id, axis:q.axis, letter:letter, choice:choice};
+  current++;
+  if(current >= quizQuestions.length){
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function goBack(){
+  if(current === 0) return;
+  current--;
+  renderQuestion();
+}
+
+function showResult(){
+  document.getElementById('progress-fill').style.width = '100%';
+
+  const tally = {
+    EI:{E:0,I:0}, SN:{S:0,N:0}, TF:{T:0,F:0}, JP:{J:0,P:0}
+  };
+  answers.forEach(a => { tally[a.axis][a.letter]++; });
+
+  const type =
+    (tally.EI.E >= tally.EI.I ? 'E' : 'I') +
+    (tally.SN.S >= tally.SN.N ? 'S' : 'N') +
+    (tally.TF.T >= tally.TF.F ? 'T' : 'F') +
+    (tally.JP.J >= tally.JP.P ? 'J' : 'P');
+
+  const r = results[type];
+
+  document.getElementById('question-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+  document.getElementById('result-type').textContent = type + ' 유형';
+  document.getElementById('result-name').textContent = '🎼 ' + r.name;
+  document.getElementById('result-piece').textContent = '대표곡 : ' + r.piece;
+  document.getElementById('result-desc').innerHTML = r.desc;
+
+  document.getElementById('kpop-name').textContent = r.kpop.name;
+  document.getElementById('kpop-piece').textContent = '대표곡 : ' + r.kpop.piece;
+  document.getElementById('kpop-desc').textContent = r.kpop.desc;
+
+  const list = document.getElementById('rec-list');
+  list.innerHTML = '';
+  r.rec.forEach(track => {
+    const li = document.createElement('li');
+    li.textContent = track;
+    list.appendChild(li);
+  });
+
+  const studentId = document.getElementById('student-id').value.trim();
+  const studentName = document.getElementById('student-name').value.trim();
+
+  // 원래 문항 번호(1~32) 순서대로 A/B 응답 정리
+  const answersByOrder = new Array(questions.length).fill('');
+  answers.forEach(a => { answersByOrder[a.id - 1] = a.choice; });
+
+  saveToSheet({
+    studentId: studentId || '(학번 미입력)',
+    name: studentName || '(이름 미입력)',
+    type: type,
+    musician: r.name,
+    kpop: r.kpop.name,
+    answers: answersByOrder
+  });
+}
+
+function restart(){
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('start-screen').style.display = 'block';
+  document.getElementById('student-id').value = '';
+  document.getElementById('student-name').value = '';
+  document.getElementById('student-id').classList.remove('input-error');
+  document.getElementById('student-name').classList.remove('input-error');
+  document.getElementById('field-error').style.display = 'none';
+  document.getElementById('save-status').textContent = '';
+}
+</script>
+</body>
+</html>
