@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>음악 수업 자료실</title>
-<meta name="description" content="수업 시간에 바로 쓰는 음악과 수업 자료 모음">
+<title>음악 OT 자료실</title>
+<meta name="description" content="음악 수업 시간 OT 자료 모음">
 <meta name="theme-color" content="#7c4a22">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237c4a22'/><text x='50' y='73' font-size='62' font-weight='bold' text-anchor='middle' fill='%23f0e4cf'>♪</text></svg>">
 <style>
@@ -82,8 +82,8 @@
 <div class="wrap">
   <header>
     <div class="eyebrow">수업 자료실</div>
-    <h1>음악 수업 자료</h1>
-    <p class="lede">수업 시간에 바로 열어 쓰는 자료 모음입니다. 카드를 누르면 해당 자료가 열립니다.</p>
+    <h1>음악 수업 OT 자료</h1>
+    <p class="lede">수업 시간 OT 자료 모음입니다. 카드를 누르면 해당 자료가 열립니다.</p>
   </header>
 
   <div class="filters" id="filters"></div>
@@ -106,26 +106,20 @@
    ========================================================== */
 const ITEMS = [
   {
-    title: "교가",
-    desc:  "우리 학교 교가 악보와 음원입니다. 입학식·행사 연습에 사용합니다.",
-    url:   "musictool/schoolsong_hh.html",
-    tag:   "감상·가창",
+    title: "음악기초진단설문",
+    desc:  "음악 기초 진단 설문입니다. 학생 수준 진단에 활용합니다.",
+    url:   "https://docs.google.com/forms/d/e/1FAIpQLSfvD4xxY39BeMNpm0y58Ro_Zfif79kIH-L4kQDiCDIKH2Mt7w/viewform?usp=dialog",
+    tag:   "설문",
     icon:  "🎵"
   },
   {
-    title: "멀티모드 튜너",
-    desc:  "우쿨렐레·기타·베이스·바이올린 조율 연습. 줄감개를 직접 돌려보며 조율 원리를 익힙니다.",
-    url:   "musictool/tuner.html",
-    tag:   "기악",
-    icon:  "🎸"
+    title: "음악가 MBTI",
+    desc:  "음악 수업에서의 MBTI를 검사하고, 음악가로서의 특성을 탐색합니다.",
+    url:   "musicot/mbti.html",
+    tag:   "MBTI",
+    icon:  "💡"
   },
-  {
-    title: "음색 원리",
-    desc:  "소리나는 웹 악기",
-    url:   "musictool/tones.html",
-    tag:   "기악·감상",
-    icon:  "🎹"
-  },
+
   /* ── 자료를 추가할 때는 아래 형식을 복사해서 쓰세요 ──
   {
     title: "자료 이름",
