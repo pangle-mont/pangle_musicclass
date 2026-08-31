@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>피드백 조회</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+
+<style>
+  /* ====================== 디자인 토큰 ====================== */
+  :root{
+    --color-bg: #FAF8F4;
+    --color-surface: #FFFFFF;
+    --color-ink: #1F2430;
+    --color-ink-soft: #6B7280;
+    --color-line: #E7E2D9;
+
+    --color-accent: #7C2C3B;        /* 짙은 와인색 — 공연 커튼에서 착안 */
+    --color-accent-soft: rgba(124,44,59,0.08);
+    --color-success: #3F6650;
+    --color-success-soft: rgba(63,102,80,0.07);
+    --color-error: #9C3B2E;
+    --color-error-soft: rgba(156,59,46,0.07);
+
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(31,36,48,0.05), 0 10px 28px rgba(31,36,48,0.06);
+    --font-display: 'Noto Serif KR', serif;
+    --font-body: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; }
+
+  body{
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display:flex;
+    justify-content:center;
+    padding: clamp(20px, 6vw, 56px) 16px;
+    line-height: 1.55;
+  }
+
+  main{
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* ====================== 상단 헤더 ====================== */
+  .staff{
+    display:block;
+    margin: 0 auto 18px;
+    width: 96px;
+    height: auto;
+    opacity: 0.55;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom: 28px;
+  }
+
+  .subject-name{
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.25rem, 4.5vw, 1.5rem);
+    color: var(--color-ink);
+    margin: 0 0 6px;
+    word-break: keep-all;
+  }
+
+  .subject-sub{
+    font-size: 0.9rem;
+    color: var(--color-ink-soft);
+    margin: 0;
+  }
+
+  /* ====================== 입력 카드 ====================== */
+  .card{
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 24px;
+  }
+
+  .field{
+    margin-bottom: 16px;
+  }
+
+  .field label{
+    display:block;
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+    margin-bottom: 6px;
+  }
+
+  .field input{
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    font-family: var(--font-body);
+    color: var(--color-ink);
+    background: #FCFBF9;
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .field input:focus-visible{
+    border-color: var(--color-accent);
+    background: #FFFFFF;
+  }
+
+  button.submit{
+    width: 100%;
+    margin-top: 6px;
+    padding: 13px 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--font-body);
+    color: #FFFFFF;
+    background: var(--color-accent);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.05s ease;
+  }
+
+  button.submit:hover{ opacity: 0.92; }
+  button.submit:active{ transform: scale(0.99); }
+  button.submit:disabled{ opacity: 0.6; cursor: default; }
+  button.submit:focus-visible{ outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+  /* ====================== 상태 / 결과 영역 ====================== */
+  #status{
+    margin-top: 18px;
+    font-size: 0.92rem;
+    text-align:center;
+    color: var(--color-ink-soft);
+  }
+
+  .spinner{
+    display:inline-block;
+    width: 14px; height:14px;
+    border: 2px solid var(--color-line);
+    border-top-color: var(--color-accent);
+    border-radius:50%;
+    margin-right:6px;
+    vertical-align: -2px;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin{ to { transform: rotate(360deg); } }
+
+  .message-box{
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    text-align:center;
+  }
+
+  .message-box.error{
+    background: var(--color-error-soft);
+    color: var(--color-error);
+  }
+
+  #result{
+    margin-top: 22px;
+    display:none;
+  }
+
+  #result.show{
+    display:block;
+    animation: rise 0.35s ease both;
+  }
+
+  @keyframes rise{
+    from{ opacity:0; transform: translateY(6px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  .result-name{
+    text-align:center;
+    font-size: 0.95rem;
+    color: var(--color-ink-soft);
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .result-name strong{
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
+  .feedback-item{
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .feedback-item:last-child{ border-bottom: none; }
+
+  .feedback-label{
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    margin-bottom: 6px;
+  }
+
+  .feedback-content{
+    font-size: 0.95rem;
+    color: var(--color-ink);
+    white-space: pre-wrap;
+    word-break: keep-all;
+  }
+
+  .feedback-content:empty::after{
+    content: "입력된 내용이 없습니다.";
+    color: var(--color-ink-soft);
+    font-style: normal;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .spinner{ animation: none; }
+    #result.show{ animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <svg class="staff" viewBox="0 0 100 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <line x1="0" y1="2" x2="100" y2="2" stroke="#7C2C3B" stroke-width="1"/>
+    <line x1="0" y1="7" x2="100" y2="7" stroke="#7C2C3B" stroke-width="1"/>
+    <line x1="0" y1="12" x2="100" y2="12" stroke="#7C2C3B" stroke-width="1"/>
+    <line x1="0" y1="17" x2="100" y2="17" stroke="#7C2C3B" stroke-width="1"/>
+    <line x1="0" y1="22" x2="100" y2="22" stroke="#7C2C3B" stroke-width="1"/>
+  </svg>
+
+  <header>
+    <h1 class="subject-name" id="subject-name-el"><!-- CONFIG.subjectName이 여기 채워집니다 --></h1>
+    <p class="subject-sub">학번과 이름을 입력하면 본인 피드백만 확인할 수 있어요</p>
+  </header>
+
+  <div class="card">
+    <form id="lookup-form" novalidate>
+      <div class="field">
+        <label for="student-id">학번</label>
+        <input type="text" id="student-id" inputmode="numeric" autocomplete="off" placeholder="예: 10203" />
+      </div>
+      <div class="field">
+        <label for="student-name">이름</label>
+        <input type="text" id="student-name" autocomplete="off" placeholder="예: 홍길동" />
+      </div>
+      <button type="submit" class="submit" id="submit-btn">확인</button>
+    </form>
+
+    <div id="status" role="status" aria-live="polite"></div>
+
+    <div id="result" aria-live="polite">
+      <div class="result-name"><strong id="result-name"></strong>님의 피드백</div>
+
+      <div class="feedback-item">
+        <div class="feedback-label" id="label-basic"></div>
+        <div class="feedback-content" id="content-basic"></div>
+      </div>
+      <div class="feedback-item">
+        <div class="feedback-label" id="label-item1"></div>
+        <div class="feedback-content" id="content-item1"></div>
+      </div>
+      <div class="feedback-item">
+        <div class="feedback-label" id="label-item2"></div>
+        <div class="feedback-content" id="content-item2"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   설정 — 필요할 때 이 부분만 수정하면 됩니다
+   ============================================================ */
+const CONFIG = {
+  // 구글 스프레드시트 "웹에 게시" CSV 링크
+  csvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQy0CjFzrYL4Jqve6SrcCJsckTffDbKH1E4ySYCaG__ayhABfgnvKVEwoXJw82opyshnhJ9ZKmcyk1/pub?output=csv',
+
+  // 화면 상단에 표시할 과목명 / 안내 문구
+  subjectName: '음악 수행평가 피드백 조회',
+
+  // 결과 항목의 이름표 (평가 요소 이름이 바뀌면 여기만 고치면 됩니다)
+  labels: {
+    basic: '기본 항목 점검',
+    item1: '요소1 피드백',
+    item2: '요소2 피드백'
+  }
+};
+
+/* 시트의 열 순서: 학번(0) | 이름(1) | 기본 항목(2) | 요소1 피드백(3) | 요소2 피드백(4) */
+
+document.getElementById('subject-name-el').textContent = CONFIG.subjectName;
+document.getElementById('label-basic').textContent = CONFIG.labels.basic;
+document.getElementById('label-item1').textContent = CONFIG.labels.item1;
+document.getElementById('label-item2').textContent = CONFIG.labels.item2;
+
+/* ============================================================
+   CSV 파서 — 셀 안에 쉼표/줄바꿈이 있어도 안전하게 처리
+   ============================================================ */
+function parseCSV(text){
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++){
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (inQuotes){
+      if (char === '"' && next === '"'){ field += '"'; i++; }
+      else if (char === '"'){ inQuotes = false; }
+      else { field += char; }
+    } else {
+      if (char === '"'){ inQuotes = true; }
+      else if (char === ','){ row.push(field); field = ''; }
+      else if (char === '\r'){ /* 무시 */ }
+      else if (char === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else { field += char; }
+    }
+  }
+  if (field.length > 0 || row.length > 0){ row.push(field); rows.push(row); }
+
+  // 완전히 빈 행 제거
+  return rows.filter(r => r.some(cell => cell.trim() !== ''));
+}
+
+/* ============================================================
+   비교용 정규화
+   ============================================================ */
+function normalizeId(v){
+  return (v || '').replace(/[^0-9]/g, '');
+}
+function normalizeName(v){
+  return (v || '').trim();
+}
+
+/* ============================================================
+   화면 상태 처리
+   ============================================================ */
+const statusEl = document.getElementById('status');
+const resultEl = document.getElementById('result');
+const submitBtn = document.getElementById('submit-btn');
+
+function setStatus(html){
+  statusEl.innerHTML = html;
+}
+function clearResult(){
+  resultEl.classList.remove('show');
+}
+function showResult(row){
+  document.getElementById('result-name').textContent = normalizeName(row[1]);
+  document.getElementById('content-basic').textContent = (row[2] || '').trim();
+  document.getElementById('content-item1').textContent = (row[3] || '').trim();
+  document.getElementById('content-item2').textContent = (row[4] || '').trim();
+  resultEl.classList.add('show');
+}
+
+/* ============================================================
+   조회 로직
+   ============================================================ */
+async function handleSearch(e){
+  e.preventDefault();
+  clearResult();
+
+  const idInput = document.getElementById('student-id').value;
+  const nameInput = document.getElementById('student-name').value;
+
+  if (!normalizeId(idInput) || !normalizeName(nameInput)){
+    setStatus('학번과 이름을 모두 입력해주세요.');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  setStatus('<span class="spinner"></span>확인 중...');
+
+  try {
+    const separator = CONFIG.csvUrl.includes('?') ? '&' : '?';
+    const url = `${CONFIG.csvUrl}${separator}cachebust=${Date.now()}`;
+
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error('네트워크 오류');
+
+    const text = await res.text();
+    const rows = parseCSV(text);
+    const dataRows = rows.slice(1); // 첫 행(헤더) 제외
+
+    const targetId = normalizeId(idInput);
+    const targetName = normalizeName(nameInput);
+
+    const match = dataRows.find(row =>
+      normalizeId(row[0]) === targetId && normalizeName(row[1]) === targetName
+    );
+
+    if (match){
+      setStatus('');
+      showResult(match);
+    } else {
+      setStatus('');
+      document.getElementById('status').innerHTML =
+        '<div class="message-box error">학번 또는 이름을 다시 확인해주세요</div>';
+    }
+  } catch (err){
+    setStatus('<div class="message-box error">데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>');
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
+document.getElementById('lookup-form').addEventListener('submit', handleSearch);
+</script>
+
+</body>
+</html>
