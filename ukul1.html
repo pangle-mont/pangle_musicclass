@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우쿨렐레 마스터 과정 사전 조사</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root{
+  --bg:#F4F7F6;
+  --card:#FFFFFF;
+  --text:#1C2321;
+  --muted:#66736F;
+  --line:#DEE5E2;
+  --accent:#0E7C6B;
+  --accent-soft:#E5F1EE;
+  --danger:#C6392F;
+  --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:16px;
+  line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 56px}
+
+/* 상단 진행률 */
+.topbar{
+  position:sticky;top:0;z-index:10;
+  background:rgba(244,247,246,.94);
+  backdrop-filter:saturate(180%) blur(8px);
+  border-bottom:1px solid var(--line);
+  padding:10px 0 8px;
+}
+.topbar .inner{max-width:640px;margin:0 auto;padding:0 16px}
+.progress-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.progress-row b{font-size:15px;font-weight:600}
+.progress-row span{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .25s ease}
+
+/* 머리말 */
+header.intro{padding:26px 0 6px}
+header.intro h1{font-size:26px;line-height:1.3;font-weight:700;margin:0 0 8px}
+header.intro p{margin:0;color:var(--muted);font-size:15px}
+
+/* 카드 */
+section.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:20px 18px;
+  margin-top:16px;
+}
+.card > h2{
+  font-size:19px;font-weight:700;margin:0 0 4px;
+  display:flex;align-items:center;gap:8px;
+}
+.card > h2 em{
+  font-style:normal;font-size:13px;font-weight:600;
+  color:var(--accent);background:var(--accent-soft);
+  border-radius:99px;padding:3px 9px;
+}
+.card > .card-desc{margin:0 0 14px;color:var(--muted);font-size:14px}
+
+/* 문항 */
+.field{padding:14px 12px;margin:0 -12px;border-radius:12px}
+.field + .field{border-top:1px solid var(--line)}
+.field.invalid{background:#FDF3F2;border-top-color:transparent;box-shadow:inset 0 0 0 2px var(--danger)}
+.label{display:block;font-size:16px;font-weight:600;margin-bottom:10px}
+.label .req{color:var(--danger);margin-left:3px}
+.hint{display:block;font-weight:400;font-size:13px;color:var(--muted);margin-top:2px}
+.msg{display:none;color:var(--danger);font-size:14px;margin-top:8px}
+.field.invalid .msg,.song.invalid .msg{display:block}
+.song.invalid{border-color:var(--danger);background:#FDF3F2}
+.song.invalid input[type=text]{border-color:var(--danger)}
+
+/* 입력 */
+input[type=text]{
+  width:100%;height:48px;padding:0 14px;font-size:16px;
+  color:var(--text);background:#fff;
+  border:1px solid var(--line);border-radius:10px;
+  font-family:inherit;
+}
+input[type=text]::placeholder{color:#A8B2AF}
+input[type=text]:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.field.invalid input[type=text],.field.invalid select{border-color:var(--danger)}
+select{
+  width:100%;height:48px;padding:0 40px 0 12px;font-size:16px;font-family:inherit;
+  color:var(--text);background:#fff;border:1px solid var(--line);border-radius:10px;
+  appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><path d='M5 8l5 5 5-5' fill='none' stroke='%2366736F' stroke-width='1.8' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 12px center;
+}
+
+/* 선택 칩 */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips.grid3{display:grid;grid-template-columns:repeat(3,1fr)}
+.chips.grid2{display:grid;grid-template-columns:repeat(2,1fr)}
+.chip{position:relative;display:block}
+.chip input{position:absolute;opacity:0;width:1px;height:1px}
+.chip span{
+  display:flex;align-items:center;justify-content:center;
+  min-height:48px;padding:8px 14px;text-align:center;
+  font-size:15px;border:1px solid var(--line);border-radius:10px;background:#fff;
+  cursor:pointer;transition:background .12s,border-color .12s;
+}
+.chip input:checked + span{
+  border-color:var(--accent);background:var(--accent-soft);
+  color:var(--accent);font-weight:600;
+}
+.chip input:focus-visible + span{box-shadow:0 0 0 3px var(--accent-soft)}
+
+/* 4점 척도 */
+.scale{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.scale .chip span{flex-direction:column;gap:2px;min-height:64px;padding:8px 4px;line-height:1.25}
+.scale .chip b{font-size:17px;font-weight:700}
+.scale .chip small{font-size:12px;color:var(--muted)}
+.scale .chip input:checked + span small{color:var(--accent)}
+
+/* 슬라이더 */
+.slider-value{
+  display:flex;align-items:baseline;gap:8px;margin-bottom:6px;
+  font-size:15px;color:var(--muted);
+}
+.slider-value b{font-size:22px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;height:44px;background:transparent;appearance:none;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:28px;height:28px;margin-top:-11px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);
+}
+input[type=range]::-moz-range-track{height:6px;border-radius:99px;background:var(--line)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--accent);border:3px solid #fff}
+.scale-ends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:-4px}
+
+/* 악보 미리보기 목록 */
+.sheetsAll{align-items:center;justify-content:center;text-decoration:none;margin:0 0 12px}
+.sheets{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.sheets .item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.sheets .item:last-child{border-bottom:none}
+.sheets .meta{flex:1;min-width:0}
+.sheets .meta b{display:block;font-size:15px;font-weight:600;line-height:1.35}
+.sheets .meta span{display:block;font-size:13px;color:var(--muted)}
+.sheets .stars{font-style:normal;color:var(--accent);letter-spacing:1px}
+.sheets a.view{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  min-height:44px;padding:0 14px;border-radius:10px;
+  border:1px solid var(--accent);color:var(--accent);background:#fff;
+  font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;
+}
+.sheets .noSheet{flex:0 0 auto;font-size:13px;color:var(--muted);padding:0 8px;white-space:nowrap}
+
+/* 희망곡 */
+.song{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px}
+.song:first-of-type{margin-top:0}
+.song h3{
+  margin:0 0 10px;font-size:15px;font-weight:700;color:var(--accent);
+}
+.song .row{margin-top:10px}
+.song .row:first-child{margin-top:0}
+.song label.small{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* 버튼 */
+.btn{
+  width:100%;min-height:52px;border-radius:12px;font-size:17px;font-weight:600;
+  font-family:inherit;cursor:pointer;border:1px solid transparent;
+}
+.btn-main{background:var(--accent);color:#fff;margin-top:20px}
+.btn-main:disabled{background:#9BB5AF;cursor:default}
+.btn-sub{background:#fff;color:var(--accent);border-color:var(--accent);margin-top:10px}
+.btn-sub.copied{background:var(--accent-soft)}
+
+/* 완료 화면 */
+.done{display:none}
+.done.on{display:block}
+.done h2{font-size:22px;margin:0 0 6px}
+.done .lead{color:var(--muted);margin:0 0 16px;font-size:15px}
+.summary{border-top:1px solid var(--line);padding-top:12px}
+.summary .line{display:flex;gap:12px;padding:7px 0;font-size:15px;border-bottom:1px solid #F0F3F2}
+.summary .line dt{flex:0 0 116px;color:var(--muted);margin:0}
+.summary .line dd{margin:0;flex:1;word-break:break-word}
+.notice{
+  border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.5;margin-bottom:14px;
+}
+.notice.warn{background:#FDF3F2;color:#8E2B23;border:1px solid #F3D3D0}
+.foot{margin-top:22px;text-align:center;font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="topbar" id="topbar">
+  <div class="inner">
+    <div class="progress-row"><b>진행률</b><span id="pct">0%</span></div>
+    <div class="bar"><i id="barFill"></i></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ===== 설문 본문 ===== -->
+  <div id="formArea">
+    <header class="intro">
+      <h1>우쿨렐레 마스터 과정 사전 조사</h1>
+      <p>현재 실력을 진단 후 수준에 맞는 곡을 선정합니다. 처음 배우는 학생부터 이미 잘 연주하는 학생까지 모두 괜찮으니 솔직하게 답해 주세요.</p>
+    </header>
+
+    <!-- 1. 기본 정보 -->
+    <section class="card">
+      <h2>기본 정보 <em>1</em></h2>
+
+      <div class="field" id="f_sid">
+        <label class="label" for="sid">학번<span class="req">*</span>
+          <span class="hint">숫자만 입력 (예: 10509)</span>
+        </label>
+        <input type="text" id="sid" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="10509" autocomplete="off">
+        <p class="msg">학번을 숫자로 입력해 주세요.</p>
+      </div>
+
+      <div class="field" id="f_name">
+        <label class="label" for="name">이름<span class="req">*</span></label>
+        <input type="text" id="name" maxlength="20" placeholder="이름" autocomplete="off">
+        <p class="msg">이름을 입력해 주세요.</p>
+      </div>
+    </section>
+
+    <!-- 2. 경험 -->
+    <section class="card">
+      <h2>연주 경험 <em>2</em></h2>
+
+      <div class="field" id="f_uke">
+        <span class="label">우쿨렐레를 배우거나 연주해 본 적이 있나요?</span>
+        <div class="chips grid2">
+          <label class="chip"><input type="radio" name="uke" value="있음"><span>있음</span></label>
+          <label class="chip"><input type="radio" name="uke" value="없음"><span>없음</span></label>
+        </div>
+        <p class="msg">하나를 선택해 주세요.</p>
+      </div>
+
+      <div class="field" id="f_str">
+        <span class="label">기타를 배우거나 연주해 본 적이 있나요?</span>
+        <div class="chips grid2">
+          <label class="chip"><input type="radio" name="str" value="있음"><span>있음</span></label>
+          <label class="chip"><input type="radio" name="str" value="없음"><span>없음</span></label>
+        </div>
+        <p class="msg">하나를 선택해 주세요.</p>
+      </div>
+
+      <div class="field" id="f_period">
+        <span class="label">배운 기간은 어느 정도인가요?</span>
+        <div class="chips grid2">
+          <label class="chip"><input type="radio" name="period" value="배운 적 없음"><span>배운 적 없음</span></label>
+          <label class="chip"><input type="radio" name="period" value="6개월 미만"><span>6개월 미만</span></label>
+          <label class="chip"><input type="radio" name="period" value="6개월~1년"><span>6개월~1년</span></label>
+          <label class="chip"><input type="radio" name="period" value="1년 이상"><span>1년 이상</span></label>
+        </div>
+        <p class="msg">하나를 선택해 주세요.</p>
+      </div>
+
+      <div class="field" id="f_own">
+        <span class="label">개인 우쿨렐레를 가지고 있나요?</span>
+        <div class="chips grid2">
+          <label class="chip"><input type="radio" name="own" value="있음"><span>있음</span></label>
+          <label class="chip"><input type="radio" name="own" value="없음"><span>없음</span></label>
+        </div>
+        <p class="msg">하나를 선택해 주세요.</p>
+      </div>
+    </section>
+
+    <!-- 3. 현재 실력 -->
+    <section class="card">
+      <h2>현재 실력 점검<em>3</em></h2>
+      <p class="card-desc">현재 자신의 연주 실력 상태를 답해 주세요.</p>
+
+      <div class="field" id="f_chords">
+        <span class="label">지금 잡을 수 있는 코드를 모두 골라 주세요.
+          <span class="hint">천천히라도 소리가 나면 선택</span>
+        </span>
+        <div class="chips grid3" id="chordBox">
+          <label class="chip"><input type="checkbox" name="chord" value="C"><span>C</span></label>
+          <label class="chip"><input type="checkbox" name="chord" value="F"><span>F</span></label>
+          <label class="chip"><input type="checkbox" name="chord" value="G7"><span>G7</span></label>
+          <label class="chip"><input type="checkbox" name="chord" value="Am"><span>Am</span></label>
+          <label class="chip"><input type="checkbox" name="chord" value="C7"><span>C7</span></label>
+          <label class="chip"><input type="checkbox" name="chord" value="Dm"><span>Dm</span></label>
+          <label class="chip"><input type="checkbox" name="chord" value="Em"><span>Em</span></label>
+          <label class="chip"><input type="checkbox" name="chord" value="G"><span>G</span></label>
+          <label class="chip"><input type="checkbox" name="chord" value="A7"><span>A7</span></label>
+          <label class="chip"><input type="checkbox" name="chord" value="없음" id="chordNone"><span>없음</span></label>
+        </div>
+        <p class="msg">하나 이상 선택해 주세요. 아직 없다면 '없음'을 눌러 주세요.</p>
+      </div>
+
+      <div class="field" id="f_tune">
+        <span class="label">튜닝(조율)은 어떻게 하나요?</span>
+        <div class="chips grid2">
+          <label class="chip"><input type="radio" name="tune" value="혼자 가능"><span>혼자 가능</span></label>
+          <label class="chip"><input type="radio" name="tune" value="튜너 사용"><span>튜너 사용</span></label>
+          <label class="chip"><input type="radio" name="tune" value="도움 필요"><span>도움 필요</span></label>
+          <label class="chip"><input type="radio" name="tune" value="아예 모름"><span>아예 모름</span></label>
+        </div>
+        <p class="msg">하나를 선택해 주세요.</p>
+      </div>
+
+      <div class="field" id="f_read">
+        <span class="label">코드 다이어그램과 TAB 악보를 읽을 수 있나요?</span>
+        <div class="scale">
+          <label class="chip"><input type="radio" name="read" value="1"><span><b>1</b><small>전혀 못함</small></span></label>
+          <label class="chip"><input type="radio" name="read" value="2"><span><b>2</b><small>조금 어려움</small></span></label>
+          <label class="chip"><input type="radio" name="read" value="3"><span><b>3</b><small>대체로 됨</small></span></label>
+          <label class="chip"><input type="radio" name="read" value="4"><span><b>4</b><small>능숙함</small></span></label>
+        </div>
+        <p class="msg">하나를 선택해 주세요.</p>
+      </div>
+
+      <div class="field" id="f_rhythm">
+        <span class="label">스트로크(스트럼)를 하며 리듬을 일정하게 유지할 수 있나요?</span>
+        <div class="scale">
+          <label class="chip"><input type="radio" name="rhythm" value="1"><span><b>1</b><small>전혀 못함</small></span></label>
+          <label class="chip"><input type="radio" name="rhythm" value="2"><span><b>2</b><small>자주 흐트러짐</small></span></label>
+          <label class="chip"><input type="radio" name="rhythm" value="3"><span><b>3</b><small>대체로 유지</small></span></label>
+          <label class="chip"><input type="radio" name="rhythm" value="4"><span><b>4</b><small>안정적</small></span></label>
+        </div>
+        <p class="msg">하나를 선택해 주세요.</p>
+      </div>
+
+      <div class="field" id="f_change">
+        <span class="label">코드를 바꾸는 속도는 어떤가요?</span>
+        <div class="scale">
+          <label class="chip"><input type="radio" name="change" value="1"><span><b>1</b><small>못 바꿈</small></span></label>
+          <label class="chip"><input type="radio" name="change" value="2"><span><b>2</b><small>많이 끊김</small></span></label>
+          <label class="chip"><input type="radio" name="change" value="3"><span><b>3</b><small>조금 끊김</small></span></label>
+          <label class="chip"><input type="radio" name="change" value="4"><span><b>4</b><small>거의 안 끊김</small></span></label>
+        </div>
+        <p class="msg">하나를 선택해 주세요.</p>
+      </div>
+
+      <div class="field" id="f_conf">
+        <span class="label" id="confLabel">우쿨렐레 연주에 대한 전체적인 자신감</span>
+        <div class="slider-value"><b id="confNum">3</b><span id="confWord">보통이다</span></div>
+        <input type="range" id="conf" min="1" max="5" step="1" value="3" aria-labelledby="confLabel">
+        <div class="scale-ends"><span>1 · 전혀 없다</span><span>5 · 아주 많다</span></div>
+        <p class="msg">막대를 한 번 움직여 주세요.</p>
+      </div>
+    </section>
+
+    <!-- 4. 희망곡 -->
+    <section class="card">
+      <h2>연주하고 싶은 곡 <em>4</em></h2>
+      <p class="card-desc">악보를 먼저 확인한 뒤 골라 주세요. 악보는 새 창에서 열립니다. 난이도는 우쿨렐레 기준입니다.</p>
+      <a class="btn btn-sub sheetsAll" id="sheetListBtn" href="#" target="_blank" rel="noopener noreferrer" style="display:none"></a>
+      <div class="sheets" id="sheetList"></div>
+      <div id="songArea"></div>
+    </section>
+
+    <button class="btn btn-main" id="submitBtn">제출하기</button>
+    <p class="foot">제출 후에는 수정할 수 없습니다. 잘못 냈다면 선생님께 말해 주세요.</p>
+  </div>
+
+  <!-- ===== 완료 화면 ===== -->
+  <div class="done" id="doneArea">
+    <section class="card">
+      <div class="notice warn" id="sendWarn" style="display:none"></div>
+      <h2>제출이 완료되었습니다</h2>
+      <p class="lead">아래 내용으로 제출되었습니다. 창을 닫아도 됩니다.</p>
+      <dl class="summary" id="summaryBox"></dl>
+      <button class="btn btn-sub" id="copyBtn">응답 내용 복사하기</button>
+    </section>
+  </div>
+
+</div>
+
+<script>
+/* =======================================================================
+   설정 — 이 아래 두 줄만 고치면 됩니다.
+   ======================================================================= */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw17v5xNsocwFeMegYaVRQEX8RxkXQdRXE5gu6ZO6PKoFHkXy8x1P5WbaIR0LKiLoUJ/exec";          // Google Apps Script 웹앱 배포 URL 붙여넣기
+const REQUIRE_FIRST_SONG = true; // 1순위 곡명을 필수로 할지 여부
+
+/* ▼ 전체 악보 목록 PDF (곡목·사용 코드 등을 정리한 안내 문서)
+   링크를 넣으면 4번 섹션 맨 위에 버튼이 나타나고, 비워 두면 버튼이 숨겨집니다. */
+const SHEET_LIST_URL = "https://drive.google.com/file/d/1cv3on9Fzp0DmTXIv-Cl6Mcgv90e7Z6tg/view?usp=drive_link";
+const SHEET_LIST_LABEL = "추가 악보 목록 보기";
+
+/* ▼ 추천곡 목록
+   title: 곡명 / artist: 가수 / level: 난이도 1~5 (별 개수)
+   sheet: 곡별 악보 PDF 링크. 비워 두면 '악보 준비 중'으로 표시됩니다.
+          (구글 드라이브에 PDF 업로드 → 공유 → '링크가 있는 모든 사용자: 뷰어' → 링크 복사) */
+const SONGS = [
+  { title: "벚꽃엔딩", artist: "버스커 버스커", level: 3, sheet: "https://drive.google.com/file/d/1SlIvfBItTNfIz-Bo088kJ7X3-ZZGBgz0/view?usp=sharing" },
+  { title: "오래된 노래", artist: "스탠딩 에그", level: 3, sheet: "https://drive.google.com/file/d/12So-zrdJh86XpnvHnTZchwkL8KTncezB/view?usp=drive_link" },
+  { title: "너에게 난 나에게 넌", artist: "자전거 탄 풍경", level: 3, sheet: "https://drive.google.com/file/d/1TAp0etPqHUHqCvMNgh99QQL1kKZSxT1C/view?usp=drive_link" },
+  { title: "주저하는 연인들을 위해", artist: "잔나비", level: 4, sheet: "https://drive.google.com/file/d/11lVhbfdzLZayNf1j3SqLvMoRWhiRyvtl/view?usp=drive_link" },
+  { title: "흔들리는 꽃들 속에서 네 샴푸 향이 느껴진 거야", artist: "장범준", level: 5, sheet: "https://drive.google.com/file/d/1-5ZTicmkvZyvUg6fD1FrvevN1YlVNKVP/view?usp=drive_link" }
+];
+/* ▲ 여기까지 교체 */
+
+/* 시트 헤더와 이름·순서가 같아야 합니다. */
+const KEYS = ["학번","이름","우쿨렐레경험","기타경험","배운기간","개인악기보유",
+  "연주가능코드","튜닝","코드TAB읽기","리듬유지","코드전환","자신감",
+  "1순위곡명","1순위가수","1순위이유","2순위곡명","2순위가수","2순위이유",
+  "3순위곡명","3순위가수","3순위이유"];
+
+/* ======================= 이 아래는 수정하지 않아도 됩니다 ======================= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.prototype.slice.call(document.querySelectorAll(s));
+const radio = n => { const el = document.querySelector('input[name="'+n+'"]:checked'); return el ? el.value : ""; };
+const CONF_WORD = {1:"전혀 없다",2:"별로 없다",3:"보통이다",4:"조금 있다",5:"아주 많다"};
+let confTouched = false, submitted = false, lastSummary = "";
+
+/* --- 악보 목록 PDF 버튼 --- */
+if(SHEET_LIST_URL){
+  const sb = $("#sheetListBtn");
+  sb.href = SHEET_LIST_URL;
+  sb.textContent = SHEET_LIST_LABEL;
+  sb.style.display = "flex";
+}
+
+/* --- 악보 미리보기 목록 만들기 --- */
+$("#sheetList").innerHTML = SONGS.map(function(s){
+  const link = s.sheet
+    ? '<a class="view" href="'+escapeHtml(s.sheet)+'" target="_blank" rel="noopener noreferrer">악보 보기</a>'
+    : '<span class="noSheet">악보 준비 중</span>';
+  return '<div class="item">'+
+      '<div class="meta"><b>'+escapeHtml(s.title)+'</b>'+
+      '<span>'+escapeHtml(s.artist)+' <i class="stars">'+"★".repeat(s.level)+'</i></span></div>'+
+      link+
+    '</div>';
+}).join("");
+
+/* --- 희망곡 블록 만들기 --- */
+const RANKS = [
+  {n:1, note:"가장 연주하고 싶은 곡"},
+  {n:2, note:"두 번째로 하고 싶은 곡"},
+  {n:3, note:"세 번째로 하고 싶은 곡"}
+];
+$("#songArea").innerHTML = RANKS.map(function(r){
+  const opts = SONGS.map(function(s,i){
+    return '<option value="'+i+'">'+s.title+' / '+s.artist+' ('+"★".repeat(s.level)+')</option>';
+  }).join("");
+  return ''+
+  '<div class="song" id="f_song'+r.n+'">'+
+    '<h3>'+r.n+'순위 · '+r.note+'</h3>'+
+    '<div class="row">'+
+      '<label class="small" for="pick'+r.n+'">추천 목록에서 고르기</label>'+
+      '<select id="pick'+r.n+'">'+
+        '<option value="">직접 입력하기</option>'+ opts +
+      '</select>'+
+    '</div>'+
+    '<div class="row two">'+
+      '<div><label class="small" for="title'+r.n+'">곡명'+(r.n===1&&REQUIRE_FIRST_SONG?' *':'')+'</label>'+
+        '<input type="text" id="title'+r.n+'" maxlength="60" placeholder="곡명"></div>'+
+      '<div><label class="small" for="artist'+r.n+'">가수</label>'+
+        '<input type="text" id="artist'+r.n+'" maxlength="40" placeholder="가수"></div>'+
+    '</div>'+
+    '<div class="row">'+
+      '<label class="small" for="why'+r.n+'">고른 이유 (한 줄)</label>'+
+      '<input type="text" id="why'+r.n+'" maxlength="80" placeholder="예: 아는 곡이라서 or 코드가 쉬워 보여서">'+
+    '</div>'+
+    '<p class="msg">곡명을 입력하거나 추천 목록에서 골라 주세요.</p>'+
+  '</div>';
+}).join("");
+
+RANKS.forEach(function(r){
+  $("#pick"+r.n).addEventListener("change", function(){
+    const v = this.value;
+    
+    // 1. 값 채우기 및 에러 해제
+    if(v !== ""){ 
+      $("#title"+r.n).value = SONGS[+v].title;
+      $("#artist"+r.n).value = SONGS[+v].artist;
+      clearError($("#f_song"+r.n));
+    }
+    
+    // 2. 현재 각 순위별로 선택된 값 가져오기
+    let v1 = $("#pick1").value;
+    let v2 = $("#pick2").value;
+    let v3 = $("#pick3").value;
+    
+    // 3. 중복 선택 충돌 방지 (상위 순위와 같은 곡이 하위에 이미 선택되어 있으면 초기화)
+    if (v2 !== "" && v2 === v1) {
+      $("#pick2").value = "";
+      $("#title2").value = "";
+      $("#artist2").value = "";
+      v2 = ""; // 3순위 체크를 위해 갱신
+    }
+    
+    if (v3 !== "" && (v3 === v1 || v3 === v2)) {
+      $("#pick3").value = "";
+      $("#title3").value = "";
+      $("#artist3").value = "";
+      v3 = "";
+    }
+
+    // 4. 하위 순위 목록 비활성화 (disabled) 처리
+    $$("#pick2 option").forEach(function(opt) {
+      if(opt.value !== "") {
+        opt.disabled = (opt.value === v1);
+      }
+    });
+    
+    $$("#pick3 option").forEach(function(opt) {
+      if(opt.value !== "") {
+        opt.disabled = (opt.value === v1 || opt.value === v2);
+      }
+    });
+    
+    updateProgress();
+  });
+});
+
+/* --- 입력 정리 --- */
+$("#sid").addEventListener("input", function(){
+  this.value = this.value.replace(/[^0-9]/g,"");
+});
+
+/* --- '없음' 코드 배타 처리 --- */
+const chordNone = $("#chordNone");
+$$('input[name="chord"]').forEach(function(cb){
+  cb.addEventListener("change", function(){
+    if(cb === chordNone && cb.checked){
+      $$('input[name="chord"]').forEach(function(o){ if(o !== chordNone) o.checked = false; });
+    } else if(cb !== chordNone && cb.checked){
+      chordNone.checked = false;
+    }
+  });
+});
+
+/* --- 자신감 슬라이더 --- */
+const conf = $("#conf");
+conf.addEventListener("input", function(){
+  confTouched = true;
+  $("#confNum").textContent = conf.value;
+  $("#confWord").textContent = CONF_WORD[conf.value];
+  clearError($("#f_conf"));
+  updateProgress();
+});
+
+/* --- 오류 표시 --- */
+function showError(field, msg){
+  field.classList.add("invalid");
+  if(msg){ const m = field.querySelector(".msg"); if(m) m.textContent = msg; }
+}
+function clearError(field){ if(field) field.classList.remove("invalid"); }
+
+/* 값이 바뀌면 해당 문항의 오류 해제 + 진행률 갱신 */
+document.addEventListener("input", function(e){
+  const f = e.target.closest(".field, .song");
+  if(f) clearError(f);
+  updateProgress();
+});
+document.addEventListener("change", function(e){
+  const f = e.target.closest(".field, .song");
+  if(f) clearError(f);
+  updateProgress();
+});
+
+/* --- 진행률 --- */
+function answered(){
+  const chords = $$('input[name="chord"]:checked').length > 0;
+  const items = [
+    $("#sid").value.trim() !== "",
+    $("#name").value.trim() !== "",
+    radio("uke") !== "", radio("str") !== "", radio("period") !== "", radio("own") !== "",
+    chords, radio("tune") !== "", radio("read") !== "", radio("rhythm") !== "", radio("change") !== "",
+    confTouched,
+    $("#title1").value.trim() !== "",
+    $("#title2").value.trim() !== "",
+    $("#title3").value.trim() !== ""
+  ];
+  return { done: items.filter(Boolean).length, total: items.length };
+}
+function updateProgress(){
+  const a = answered();
+  const pct = Math.round(a.done / a.total * 100);
+  $("#barFill").style.width = pct + "%";
+  $("#pct").textContent = pct + "% 완료";
+}
+updateProgress();
+
+/* --- 값 모으기 --- */
+function collect(){
+  const chords = $$('input[name="chord"]:checked').map(function(c){ return c.value; }).join(", ");
+  const d = {};
+  d["학번"] = $("#sid").value.replace(/[^0-9]/g,"");
+  d["이름"] = $("#name").value.trim().replace(/\s+/g," ");
+  d["우쿨렐레경험"] = radio("uke");
+  d["기타경험"] = radio("str");
+  d["배운기간"] = radio("period");
+  d["개인악기보유"] = radio("own");
+  d["연주가능코드"] = chords;
+  d["튜닝"] = radio("tune");
+  d["코드TAB읽기"] = radio("read");
+  d["리듬유지"] = radio("rhythm");
+  d["코드전환"] = radio("change");
+  d["자신감"] = conf.value;
+  [1,2,3].forEach(function(n){
+    d[n+"순위곡명"] = $("#title"+n).value.trim();
+    d[n+"순위가수"] = $("#artist"+n).value.trim();
+    d[n+"순위이유"] = $("#why"+n).value.trim();
+  });
+  return d;
+}
+
+/* --- 검증 --- */
+function validate(){
+  const bad = [];
+  if($("#sid").value.replace(/[^0-9]/g,"").length < 3) bad.push([$("#f_sid"), "학번을 숫자로 입력해 주세요."]);
+  if($("#name").value.trim() === "") bad.push([$("#f_name"), "이름을 입력해 주세요."]);
+  if(REQUIRE_FIRST_SONG && $("#title1").value.trim() === "")
+    bad.push([$("#f_song1"), "1순위 곡은 꼭 적어 주세요."]);
+  if(bad.length === 0) return true;
+  bad.forEach(function(b){ showError(b[0], b[1]); });
+  const first = bad[0][0];
+  first.scrollIntoView({behavior:"smooth", block:"center"});
+  const focusable = first.querySelector("input[type=text]");
+  if(focusable) setTimeout(function(){ focusable.focus({preventScroll:true}); }, 350);
+  return false;
+}
+
+/* --- 요약 만들기 --- */
+function makeSummary(d){
+  const rows = [
+    ["학번 · 이름", d["학번"] + " " + d["이름"]],
+    ["우쿨렐레 경험", d["우쿨렐레경험"] || "-"],
+    ["기타 경험", d["기타경험"] || "-"],
+    ["배운 기간", d["배운기간"] || "-"],
+    ["개인 악기", d["개인악기보유"] || "-"],
+    ["가능한 코드", d["연주가능코드"] || "-"],
+    ["튜닝", d["튜닝"] || "-"],
+    ["코드·TAB 읽기", d["코드TAB읽기"] ? d["코드TAB읽기"] + " / 4" : "-"],
+    ["리듬 유지", d["리듬유지"] ? d["리듬유지"] + " / 4" : "-"],
+    ["코드 전환", d["코드전환"] ? d["코드전환"] + " / 4" : "-"],
+    ["자신감", d["자신감"] + " / 5"]
+  ];
+  [1,2,3].forEach(function(n){
+    const t = d[n+"순위곡명"];
+    if(!t) return;
+    let v = t + (d[n+"순위가수"] ? " (" + d[n+"순위가수"] + ")" : "");
+    if(d[n+"순위이유"]) v += " — " + d[n+"순위이유"];
+    rows.push([n + "순위 곡", v]);
+  });
+  return rows;
+}
+function renderSummary(rows){
+  $("#summaryBox").innerHTML = rows.map(function(r){
+    return '<div class="line"><dt>'+r[0]+'</dt><dd>'+escapeHtml(r[1])+'</dd></div>';
+  }).join("");
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function summaryText(rows){
+  return "[우쿨렐레 마스터 과정 사전 조사]\n" + rows.map(function(r){ return r[0] + ": " + r[1]; }).join("\n");
+}
+
+/* --- 제출 --- */
+const submitBtn = $("#submitBtn");
+submitBtn.addEventListener("click", function(){
+  if(submitted) return;
+  if(!validate()) return;
+
+  submitted = true;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "보내는 중…";
+
+  const data = collect();
+  const rows = makeSummary(data);
+  lastSummary = summaryText(rows);
+
+  send(data).then(function(ok){
+    renderSummary(rows);
+    $("#formArea").style.display = "none";
+    $("#doneArea").classList.add("on");
+    if(!ok){
+      const w = $("#sendWarn");
+      w.style.display = "block";
+      w.textContent = SCRIPT_URL
+        ? "인터넷 연결 문제로 저장 서버에 전송하지 못했습니다. 아래 '응답 내용 복사하기'를 눌러 선생님께 보내 주세요."
+        : "저장 주소가 아직 설정되지 않았습니다. 아래 '응답 내용 복사하기'를 눌러 선생님께 보내 주세요.";
+    }
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+});
+
+function send(data){
+  if(!SCRIPT_URL) return Promise.resolve(false);
+  const ctrl = new AbortController();
+  const timer = setTimeout(function(){ ctrl.abort(); }, 8000);
+  return fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {"Content-Type": "text/plain;charset=utf-8"},
+    body: JSON.stringify(data),
+    signal: ctrl.signal
+  }).then(function(){ clearTimeout(timer); return true; })
+    .catch(function(){ clearTimeout(timer); return false; });
+}
+
+/* --- 복사 --- */
+$("#copyBtn").addEventListener("click", function(){
+  const btn = this;
+  copyText(lastSummary).then(function(ok){
+    btn.textContent = ok ? "복사되었습니다" : "복사에 실패했습니다. 화면을 캡처해 주세요.";
+    btn.classList.add("copied");
+    setTimeout(function(){
+      btn.textContent = "응답 내용 복사하기";
+      btn.classList.remove("copied");
+    }, 2500);
+  });
+});
+function copyText(text){
+  if(navigator.clipboard && window.isSecureContext){
+    return navigator.clipboard.writeText(text).then(function(){ return true; }).catch(fallback);
+  }
+  return Promise.resolve(fallback());
+  function fallback(){
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    }catch(e){ return false; }
+  }
+}
+</script>
+</body>
+</html>
