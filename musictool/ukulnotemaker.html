@@ -135,11 +135,11 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .stage{background:#0f0e0d}}
 .scaler{transform-origin:top left}
 /* ---------- 악보 (출력물: 항상 흰 종이) ---------- */
-.sheet{width:794px;min-height:1123px;background:#fff;color:#111;padding:44px 40px 56px;font-family:var(--sheet-font);box-shadow:0 2px 14px rgba(0,0,0,.18)}
+.sheet{width:794px;min-height:1123px;background:#fff;color:#111;padding:var(--pt,44px) 40px var(--pb,56px);font-family:var(--sheet-font);box-shadow:0 2px 14px rgba(0,0,0,.18)}
 .sheet .hd{text-align:center;padding-bottom:16px}
 .sheet .ttl{font-family:var(--display);font-weight:400;line-height:1.15;margin:0}
 .sheet .art{font-family:var(--display);font-size:22px;margin-top:8px;color:#222}
-.sheet .box{border:3px solid #c8a064;padding:14px 12px 8px;margin:4px 0 34px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px}
+.sheet .box{border:3px solid #c8a064;padding:14px 12px 8px;margin:4px 0 var(--bm,34px);display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px}
 .sheet .box .cd{width:78px;text-align:center}
 .sheet .box.sz-l{padding:16px 18px 10px;gap:6px 14px}
 .sheet .box.sz-l .cd{width:112px}
@@ -151,7 +151,15 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
 .sheet .box.sz-m .cd .nm{font-size:23px;height:28px}
 .sheet .box .cd .nm{font-family:"IBM Plex Sans KR",sans-serif;font-weight:700;font-size:20px;line-height:1.1;height:25px}
 .sheet .box .cd img{width:78px;height:52px;display:block;margin:0 auto}
-.sheet .rows{display:flex;flex-direction:column;gap:30px}
+.sheet .rows{display:flex;flex-direction:column;gap:var(--rg,30px)}
+.sheet .hd{padding-bottom:var(--hb,16px)}
+.sheet .inner{transform-origin:0 0}
+.sheet.cmp .ch{height:42px}
+.sheet.cmp .m::before{top:44px}
+.sheet.cmp .bar{top:30px}
+.sheet.cmp .ts{top:22px}
+.sheet.cmp .ly{min-height:24px;padding-top:5px}
+.sheet.cmp .ly.vx{min-height:20px;padding-top:2px}
 .sheet .r{display:flex;position:relative}
 .sheet .r.first{padding-left:22px}
 .sheet .ts{position:absolute;left:0;top:30px;font-family:"IBM Plex Sans KR",sans-serif;font-weight:600;font-size:21px;line-height:22px;text-align:center;width:18px}
@@ -235,6 +243,7 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
       <div class="optrow">
         <label>가사 줄 수 <select id="fVerses"><option value="1">1절만</option><option value="2">2절까지</option><option value="3">3절까지</option></select></label>
         <label>코드 박스 크기 <select id="fBsz"><option value="">자동</option><option value="l">크게 (한 줄 5개)</option><option value="m">중간 (한 줄 6개)</option><option value="s">작게 (한 줄 8개)</option></select></label>
+        <label><input type="checkbox" id="fFit" checked> A4 한 장에 맞추기</label>
         <label><input type="checkbox" id="fPick"> 첫 마디 앞 못갖춘마디(코드 없이 가사만)</label>
       </div>
 
@@ -551,14 +560,36 @@ function renderSheet(s,el){
     h+=`</div>`;
   });
   h+=`</div>`;
-  el.innerHTML=h;
+  ["--rg","--bm","--pt","--pb","--hb"].forEach(v=>el.style.removeProperty(v));
+  el.classList.remove("cmp");
+  el.innerHTML=`<div class="inner">${h}</div>`;
   fitRows(el);
+  if(s.fit!==false) fitPage(el);
   return {used,missing:used.filter(n=>!getChord(n))};
+}
+/* 줄이 많아 A4 한 장(1123px)을 넘으면 줄 간격·여백을 단계적으로 줄임 */
+function fitPage(el){
+  const steps=[[24,26,36,44,12],[18,20,30,36,10],[14,16,24,30,8],[10,12,20,24,6],[6,10,16,18,4],[2,8,12,14,2]];
+  const fits=()=>el.scrollHeight<=1123;
+  for(const [rg,bm,pt,pb,hb] of steps){
+    if(fits()) return;
+    el.style.setProperty("--rg",rg+"px");el.style.setProperty("--bm",bm+"px");el.style.setProperty("--pt",pt+"px");el.style.setProperty("--pb",pb+"px");el.style.setProperty("--hb",hb+"px");
+  }
+  if(fits()) return;
+  el.classList.add("cmp");
+  if(fits()) return;
+  // 그래도 넘치면 악보 전체를 비율 그대로 줄여 한 장에 넣음(최대 60%까지)
+  const inner=el.querySelector(".inner"), avail=1123-12-14;
+  let k=1;
+  for(let t=0;t<3;t++){k=Math.max(.6,Math.min(1,avail/inner.offsetHeight));inner.style.width=(714/k)+"px";fitRows(el)}
+  const H=inner.offsetHeight;k=Math.max(.6,Math.min(1,avail/H));
+  inner.style.width=(714/k)+"px";inner.style.transform=`scale(${k})`;inner.style.marginBottom=(-H*(1-k))+"px";
 }
 /* 가사가 길어 줄이 종이 밖으로 나가면: 자간을 먼저 줄이고, 그래도 넘치면 글자 크기를 조금씩 줄임 */
 function fitRows(el){
   const steps=[[-.6,1],[-1,1],[-1.5,1],[-2,1],[-2,.94],[-2,.88],[-2,.82],[-2,.76],[-2,.7]];
   el.querySelectorAll(".rows .r").forEach(r=>{
+    r.style.removeProperty("--ls");r.style.removeProperty("--lf");r.classList.remove("wrapy","tightch");
     const over=()=>{
       if(r.scrollWidth>r.clientWidth+1) return true;
       const rr=r.getBoundingClientRect().right;
@@ -746,9 +777,10 @@ function fillForm(){
   $("fTitle").value=song.title||"";$("fArtist").value=song.artist||"";
   $("fTime").value=song.time??"4/4";$("fPer").value=String(song.per||4);
   $("fTsz").value=String(song.tsz||50);$("fLsz").value=String(song.lsz||17);
-  $("fVerses").value=String(song.verses||1);$("fPick").checked=!!song.pickup.on;$("fBsz").value=song.bsz||"";
+  $("fVerses").value=String(song.verses||1);$("fPick").checked=!!song.pickup.on;$("fBsz").value=song.bsz||"";$("fFit").checked=song.fit!==false;
 }
 $("fBsz").addEventListener("change",()=>{song.bsz=$("fBsz").value;refresh()});
+$("fFit").addEventListener("change",()=>{song.fit=$("fFit").checked;refresh()});
 $("fVerses").addEventListener("change",()=>{song.verses=+$("fVerses").value;drawMeasures();changed()});
 $("fPick").addEventListener("change",()=>{song.pickup.on=$("fPick").checked;drawMeasures();changed();if(song.pickup.on){const c=$("mcp");c.scrollIntoView({block:"nearest"});c.querySelector("input.ly").focus()}});
 let rT=0;
