@@ -173,6 +173,8 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
 .sheet .ly{display:flex;padding-top:8px;white-space:pre;line-height:1.2;min-height:30px;font-weight:500;letter-spacing:var(--ls,-.2px)}
 .sheet .ly .rgt{margin-left:auto}
 .sheet .r.wrapy .ly{white-space:normal;word-break:keep-all;flex-wrap:wrap}
+.sheet .r.tightch .ch{font-size:18px;letter-spacing:-1px}
+.sheet .r.tightch .ch img{width:34px;height:23px}
 .sheet .volta{position:absolute;left:4px;right:6px;top:-6px;height:12px;border-top:1.5px solid #111;font-size:13px;font-weight:700;font-family:"IBM Plex Sans KR",sans-serif;padding-left:4px;line-height:14px}
 .sheet .volta.start{border-left:1.5px solid #111}
 .sheet .mk{position:absolute;top:-8px;font-size:15px;font-weight:700;font-style:italic;font-family:Georgia,"Times New Roman",serif;display:flex;align-items:center;gap:3px;white-space:nowrap}
@@ -557,9 +559,15 @@ function renderSheet(s,el){
 function fitRows(el){
   const steps=[[-.6,1],[-1,1],[-1.5,1],[-2,1],[-2,.94],[-2,.88],[-2,.82],[-2,.76],[-2,.7]];
   el.querySelectorAll(".rows .r").forEach(r=>{
-    const over=()=>r.scrollWidth>r.clientWidth+1;
+    const over=()=>{
+      if(r.scrollWidth>r.clientWidth+1) return true;
+      const rr=r.getBoundingClientRect().right;
+      for(const m of r.querySelectorAll(".m:not(.ghost)")){if(m.getBoundingClientRect().right>rr+.5||m.scrollWidth>m.clientWidth+1) return true;
+        for(const sg of m.querySelectorAll(".seg")) if(sg.scrollWidth>sg.clientWidth+1) return true}
+      return false};
     for(let i=0;i<steps.length&&over();i++){r.style.setProperty("--ls",steps[i][0]+"px");r.style.setProperty("--lf",steps[i][1])}
     if(over()){r.style.setProperty("--ls","-1px");r.style.setProperty("--lf",.88);r.classList.add("wrapy")}
+    if(over()) r.classList.add("tightch");
   });
 }
 
