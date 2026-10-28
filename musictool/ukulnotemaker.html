@@ -96,6 +96,15 @@ body:has(#selbar:not([hidden])) .toast{bottom:calc(96px + env(safe-area-inset-bo
 .slot.on b{font-size:14px;line-height:1.2}
 .slot.on img{width:44px;height:28px;pointer-events:none}
 .slot.over{border-color:var(--wood);background:var(--wood-soft)}
+.cegrid{display:inline-grid;grid-template-columns:34px 40px repeat(5,44px);gap:4px;align-items:center;background:var(--bg);padding:10px;border-radius:8px;max-width:100%;overflow-x:auto;margin-top:6px}
+.cegrid .h{font-size:11px;color:var(--muted);text-align:center}
+.cegrid .lab{font-weight:700;font-size:13px;color:var(--wood-ink);text-align:center}
+.cegrid button{height:34px;border:1px solid var(--line);background:var(--panel);border-radius:6px;cursor:pointer;font-weight:700;color:var(--ink);padding:0}
+.cegrid button:hover{border-color:var(--wood)}
+.cegrid button.on{background:var(--wood);border-color:var(--wood);color:#fff}
+.cegrid button.o{font-size:15px}
+.cgtop{display:flex;gap:12px;align-items:center;margin-top:6px}
+.cgtop select{border:1px solid var(--line);border-radius:5px;padding:3px 6px;background:var(--bg)}
 .modeseg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .modeseg button{flex:1;border:0;background:var(--bg);padding:8px 6px;cursor:pointer;font-weight:600;color:var(--muted)}
 .modeseg button[aria-pressed="true"]{background:var(--wood);color:#fff}
@@ -285,6 +294,8 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
         <div class="hint" id="palHint">코드를 <b>끌어서</b> 아래 마디 칸에 놓으세요. 휴대폰·태블릿은 코드를 <b>눌러 고른 뒤</b> 칸을 누르면 됩니다.</div>
         <div class="roots" id="roots"></div>
         <div class="quals" id="quals"></div>
+        <div class="sec">내가 만든 코드</div>
+        <div class="songchips" id="myChips"></div>
         <div class="sec" id="songChipsLbl" hidden>이 곡에 쓴 코드</div>
         <div class="songchips" id="songChips"></div>
       </div>
@@ -338,7 +349,8 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
     </div>
 
     <div class="pane" id="tab-chord" hidden>
-      <div class="help">기본 코드는 하루 한 장 우쿨렐레 코드표를 기준으로 넣었습니다. 모양이 다르거나 없는 코드는 여기서 고치거나 새로 만들 수 있습니다. 위 줄이 A줄(1번 줄), 아래 줄이 G줄(4번 줄)입니다.</div>
+      <div class="help">기본 코드는 하루 한 장 우쿨렐레 코드표를 기준으로 넣었습니다. 모양이 다르거나 없는 코드는 여기서 고치거나 새로 만들 수 있습니다. 위 줄이 A줄(1번 줄), 아래 줄이 G줄(4번 줄)입니다. 새 코드는 이름을 자유롭게 정할 수 있어서(예: <b>C6</b>, <b>Bm7b5</b>, <b>AbM7</b>) 플랫 이름으로도 만들 수 있고, 저장하면 악보 편집 화면의 <b>내가 만든 코드</b>에 나타납니다.</div>
+      <div class="actions"><button class="btn primary" id="ceNew">+ 새 코드 만들기</button></div>
       <div class="grid2">
         <label class="f">기존 코드 고르기<select id="ceSel"></select></label>
         <label class="f">코드 이름(새 코드는 이름을 입력)<input id="ceName" autocomplete="off"></label>
@@ -349,6 +361,11 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
           <tbody id="ceRows"></tbody>
         </table>
         <div class="pv" id="cePv"></div>
+      </div>
+      <div>
+        <div class="sec">눌러서 모양 만들기 · 칸을 누르면 그 줄의 누를 자리, 다시 누르면 해제</div>
+        <div class="cgtop"><label class="status">시작 프렛 <select id="ceBase" aria-label="시작 프렛"></select></label><span class="status">○ 개방현 · × 안 침 (누를 때마다 바뀜)</span></div>
+        <div class="cegrid" id="ceGrid"></div>
       </div>
       <div class="actions">
         <button class="btn primary" id="ceSave">이 모양으로 저장</button>
@@ -674,6 +691,7 @@ function chipHTML(n){return `<button class="chip" draggable="true" data-chord="$
 function drawPalette(){
   $("roots").innerHTML=ROOTS.map(r=>`<button aria-pressed="${r===rootSel}" data-r="${r}">${r}</button>`).join("");
   $("quals").innerHTML=QUALS.map(q=>chipHTML(rootSel+q)).join("");
+  $("myChips").innerHTML=Object.keys(custom).filter(k=>!BASE[k]).map(chipHTML).join("")+`<button class="btn sm" id="newChord" type="button" style="align-self:center">+ 새 코드</button>`;
   const used=usedChords(song);
   $("songChipsLbl").hidden=!used.length;
   $("songChips").innerHTML=used.map(chipHTML).join("");
@@ -1093,7 +1111,7 @@ function ceInit(){
   if(!$("ceName").value){$("ceName").value=$("ceSel").value;ceLoad($("ceSel").value)}
   else ceDraw();
 }
-function ceLoad(n){const c=getChord(n);ce=c?{frets:c.frets.slice(),fingers:(c.fingers||[0,0,0,0]).slice()}:{frets:[0,0,0,0],fingers:[0,0,0,0]};$("ceMsg").textContent=custom[n]||custom[normKey(n)]?"직접 고친 모양입니다.":BASE[normKey(n)]?"기본 코드표 모양입니다.":"새 코드입니다. 모양을 정해 저장하세요.";ceDraw()}
+function ceLoad(n){const c=getChord(n);ce=c?{frets:c.frets.slice(),fingers:(c.fingers||[0,0,0,0]).slice()}:{frets:[0,0,0,0],fingers:[0,0,0,0]};$("ceMsg").textContent=custom[n]||custom[normKey(n)]?"직접 고친 모양입니다.":BASE[normKey(n)]?"기본 코드표 모양입니다.":"새 코드입니다. 모양을 정해 저장하세요.";ceBase=baseFret(ce.frets);ceDraw()}
 function ceDraw(){
   const fo=['<option value="-1">x 안 침</option>',...Array.from({length:13},(_,i)=>`<option value="${i}">${i===0?"0 개방현":i}</option>`)].join("");
   const fgo=['<option value="0">-</option>',...["1","2","3","4","T"].map(v=>`<option value="${v}">${v}</option>`)].join("");
@@ -1101,25 +1119,48 @@ function ceDraw(){
   STR.forEach(s=>{$("ceRows").querySelector(`[data-f="${s.i}"]`).value=String(ce.frets[s.i]);$("ceRows").querySelector(`[data-g="${s.i}"]`).value=String(ce.fingers[s.i]||0)});
   cePv();
 }
-function cePv(){$("cePv").innerHTML=`<b style="font-size:20px">${esc($("ceName").value||"?")}</b><img alt="" width="122" height="83" src="${svgURI(svgBig(ce))}"><img alt="" width="48" height="30" src="${svgURI(svgMini(ce))}">`}
-$("ceRows").addEventListener("change",e=>{const t=e.target;if(t.dataset.f!==undefined)ce.frets[+t.dataset.f]=+t.value;if(t.dataset.g!==undefined){const v=t.value;ce.fingers[+t.dataset.g]=v==="T"?"T":+v}cePv()});
+function cePv(){$("cePv").innerHTML=`<b style="font-size:20px">${esc($("ceName").value||"?")}</b><img alt="" width="122" height="83" src="${svgURI(svgBig(ce))}"><img alt="" width="48" height="30" src="${svgURI(svgMini(ce))}">`;ceGridDraw();const n=$("ceName").value.trim();$("ceReset").textContent=BASE[n]?"기본 모양으로 되돌리기":"이 코드 삭제"}
+$("ceRows").addEventListener("change",e=>{const t=e.target;if(t.dataset.f!==undefined)ce.frets[+t.dataset.f]=+t.value;if(t.dataset.g!==undefined){const v=t.value;ce.fingers[+t.dataset.g]=v==="T"?"T":+v}if(t.dataset.f!==undefined)ceBase=baseFret(ce.frets);cePv()});
 $("ceSel").addEventListener("change",()=>{$("ceName").value=$("ceSel").value;ceLoad($("ceSel").value)});
 $("ceName").addEventListener("input",cePv);
 $("ceAuto").addEventListener("click",()=>{ce.fingers=autoFingers(ce.frets);ceDraw()});
+let ceBase=1;
+function ceGridDraw(){
+  const g=$("ceGrid");if(!g)return;
+  if(!$("ceBase").options.length)$("ceBase").innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
+  $("ceBase").value=String(ceBase);
+  let h=`<span></span><span class="h">개방</span>`+[0,1,2,3,4].map(j=>`<span class="h">${ceBase+j}프렛</span>`).join("");
+  STR.forEach(s=>{const f=ce.frets[s.i];
+    h+=`<span class="lab">${s.n.split(" ")[0]}</span><button class="o${f<=0?" on":""}" data-o="${s.i}" aria-label="${s.n} 개방현 또는 안 침">${f<0?"×":f===0?"○":"·"}</button>`;
+    for(let j=0;j<5;j++){const fr=ceBase+j,on=f===fr;h+=`<button class="${on?"on":""}" data-s="${s.i}" data-f="${fr}" aria-label="${s.n} ${fr}프렛" aria-pressed="${on}">${on?(ce.fingers[s.i]||"●"):""}</button>`}
+  });
+  g.innerHTML=h;
+}
+$("ceGrid").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.o!==undefined){const i=+b.dataset.o;ce.frets[i]=ce.frets[i]===0?-1:0}
+  else{const i=+b.dataset.s,f=+b.dataset.f;ce.frets[i]=ce.frets[i]===f?0:f}
+  ce.fingers=autoFingers(ce.frets);ceDraw()});
+$("ceBase").addEventListener("change",()=>{ceBase=+$("ceBase").value;ceGridDraw()});
+function ceNew(){$("ceName").value="";ce={frets:[0,0,0,0],fingers:[0,0,0,0]};ceBase=1;$("ceMsg").textContent="코드 이름을 입력하고, 아래 칸을 눌러 모양을 만든 뒤 저장하세요.";ceDraw();$("ceName").focus()}
+$("ceNew").addEventListener("click",ceNew);
+$("pal").addEventListener("click",e=>{if(e.target.closest("#newChord")){document.querySelector('.tabs [data-tab="chord"]').click();ceNew();window.scrollTo({top:0,behavior:"smooth"})}});
 $("ceSave").addEventListener("click",async()=>{
   const n=$("ceName").value.trim();if(!n){toast("코드 이름을 입력해 주세요.");return}
-  const key=BASE[normKey(n)]?normKey(n):n;
+  const key=n;
   custom[key]={frets:ce.frets.slice(),fingers:ce.fingers.some(x=>x)?ce.fingers.slice():[0,0,0,0]};
   try{await store.putChords();toast(`${n} 모양을 저장했습니다.`)}catch(e){toast("저장하지 못했습니다.")}
   $("ceName").value=key;ceInit();$("ceSel").value=key;$("ceMsg").textContent="직접 고친 모양입니다.";drawPalette();drawMeasures();refresh();
 });
 $("ceReset").addEventListener("click",async()=>{
   const n=$("ceName").value.trim();const k=normKey(n);
-  if(!custom[n]&&!(k&&custom[k])){toast("직접 고친 모양이 없습니다.");return}
-  delete custom[n];if(k)delete custom[k];
+  const key=custom[n]?n:(k&&custom[k]&&BASE[k]&&BASE[n]?k:null);
+  if(!key){toast(BASE[n]?"직접 고친 모양이 없습니다.":"저장된 코드가 아닙니다.");return}
+  const isDel=!BASE[key];
+  if(isDel){const v=await askModal(`<b>${esc(key)}</b> 코드를 삭제할까요? 이 코드를 쓴 악보에서는 다이어그램이 빠집니다.`,[{label:"취소",v:null},{label:"삭제",v:1,danger:true}]);if(!v)return}
+  delete custom[key];
   try{await store.putChords()}catch(e){}
   if(!BASE[k]){$("ceName").value="";}
-  ceInit();if($("ceName").value)ceLoad($("ceName").value);drawPalette();drawMeasures();refresh();toast("기본 모양으로 되돌렸습니다.");
+  ceInit();if($("ceName").value)ceLoad($("ceName").value);drawPalette();drawMeasures();refresh();toast(isDel?"코드를 삭제했습니다.":"기본 모양으로 되돌렸습니다.");
 });
 
 /* ================= 시작 ================= */
