@@ -126,10 +126,18 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
 .sheet .hd{text-align:center;padding-bottom:16px}
 .sheet .ttl{font-family:var(--display);font-weight:400;line-height:1.15;margin:0}
 .sheet .art{font-family:var(--display);font-size:22px;margin-top:8px;color:#222}
-.sheet .box{border:3px solid #c8a064;padding:16px 18px 10px;margin:4px 0 34px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px}
-.sheet .box .cd{width:100px;text-align:center}
-.sheet .box .cd .nm{font-family:"IBM Plex Sans KR",sans-serif;font-weight:700;font-size:23px;line-height:1.1;height:28px}
-.sheet .box .cd img{width:100px;height:67px;display:block;margin:0 auto}
+.sheet .box{border:3px solid #c8a064;padding:14px 12px 8px;margin:4px 0 34px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px}
+.sheet .box .cd{width:78px;text-align:center}
+.sheet .box.sz-l{padding:16px 18px 10px;gap:6px 14px}
+.sheet .box.sz-l .cd{width:112px}
+.sheet .box.sz-l .cd img{width:112px;height:75px}
+.sheet .box.sz-l .cd .nm{font-size:25px;height:30px}
+.sheet .box.sz-m{padding:16px 18px 10px;gap:6px 12px}
+.sheet .box.sz-m .cd{width:100px}
+.sheet .box.sz-m .cd img{width:100px;height:67px}
+.sheet .box.sz-m .cd .nm{font-size:23px;height:28px}
+.sheet .box .cd .nm{font-family:"IBM Plex Sans KR",sans-serif;font-weight:700;font-size:20px;line-height:1.1;height:25px}
+.sheet .box .cd img{width:78px;height:52px;display:block;margin:0 auto}
 .sheet .rows{display:flex;flex-direction:column;gap:30px}
 .sheet .r{display:flex;position:relative}
 .sheet .r.first{padding-left:22px}
@@ -159,6 +167,13 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
 .sheet .mk.e.low{top:auto;bottom:-22px}
 .sheet .mno{position:absolute;left:-2px;top:22px;font-family:"IBM Plex Sans KR",sans-serif;font-size:11px;font-weight:500;color:#555;line-height:1}
 .sheet .m.hasno .segs{padding-left:6px}
+.sheet .ly.vx{padding-top:4px;min-height:24px}
+.sheet .vn{margin-right:6px;font-weight:700}
+.sheet .m.pick{flex:0 0 auto;padding-right:12px}
+.mc.pk{border-style:dashed;background:var(--bg)}
+.optrow{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:13px}
+.optrow label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.optrow select{border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--bg)}
 .sheet .emptynote{color:#999;text-align:center;padding:40px 0;font-family:"IBM Plex Sans KR",sans-serif}
 /* 모달/토스트 */
 .modal{position:fixed;inset:0;background:rgba(20,16,12,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
@@ -199,6 +214,12 @@ details.imp textarea{width:100%;min-height:120px;margin-top:8px;border:1px solid
         <label class="f">한 줄 마디 수<select id="fPer"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select></label>
         <label class="f">제목 크기<select id="fTsz"><option value="40">작게</option><option value="50" selected>보통</option><option value="60">크게</option></select></label>
         <label class="f">가사 크기<select id="fLsz"><option value="15">작게</option><option value="17" selected>보통</option><option value="20">크게</option></select></label>
+      </div>
+
+      <div class="optrow">
+        <label>가사 줄 수 <select id="fVerses"><option value="1">1절만</option><option value="2">2절까지</option><option value="3">3절까지</option></select></label>
+        <label>코드 박스 크기 <select id="fBsz"><option value="">자동</option><option value="l">크게 (한 줄 5개)</option><option value="m">중간 (한 줄 6개)</option><option value="s">작게 (한 줄 8개)</option></select></label>
+        <label><input type="checkbox" id="fPick"> 첫 마디 앞 못갖춘마디(코드 없이 가사만)</label>
       </div>
 
       <div class="pal" id="pal">
@@ -379,7 +400,8 @@ const miniImg=(n,w=44,h=28)=>{const c=getChord(n);return c?`<img alt="" width="$
 
 /* ================= 데이터 모델: 마디 = {c:[칸별 코드], ly:가사, rs, re, v, mk, brk} ================= */
 const beatsOf=t=>({"4/4":4,"3/4":3,"2/4":2,"6/8":2,"12/8":4})[t]||4;
-const newMeasure=n=>({c:Array(n).fill(""),ly:"",rs:false,re:false,v:"",mk:"",brk:false});
+const LK=["ly","ly2","ly3"];
+const newMeasure=n=>({c:Array(n).fill(""),ly:"",ly2:"",ly3:"",rs:false,re:false,v:"",mk:"",brk:false});
 
 /* 기존 텍스트 문법 → 마디 */
 function parseText(text,N){
@@ -422,6 +444,7 @@ function normalizeSong(s){
   delete s.body;
   s.measures=s.measures.map(m=>{const x={...newMeasure(N),...m};x.c=(x.c||[]).slice(0,N);while(x.c.length<N)x.c.push("");return x});
   s.order=s.order||[];s.hidden=s.hidden||[];
+  s.verses=+s.verses||1;s.pickup={on:false,ly:"",ly2:"",ly3:"",...(s.pickup||{})};
   return s;
 }
 function usedChords(s){const o=[];s.measures.forEach(m=>m.c.forEach(c=>{if(c&&!o.includes(c))o.push(c)}));return o}
@@ -451,29 +474,36 @@ const CODA=`<svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9
 const MARKS={segno:{h:SEGNO,s:1},coda:{h:CODA,s:1},dc:{h:"D.C."},ds:{h:"D.S."},fine:{h:"Fine"},tocoda:{h:"To "+CODA}};
 
 /* 마디 → 화면 조각: 코드가 놓인 칸 기준으로 나누고, 칸 수만큼 폭 비율을 줌 */
-function segsOf(m,N){
+function segsOf(m,N,V){
   const pos=[];m.c.forEach((c,i)=>{if(c)pos.push(i)});if(!pos.includes(0))pos.unshift(0);
-  const fr=(m.ly||"").split("/");
-  return pos.map((p,j)=>({chord:m.c[p]||null,span:(pos[j+1]??N)-p,text:j===pos.length-1?fr.slice(j).join(" "):(fr[j]||"")}));
+  const frs=LK.slice(0,V).map(k=>(m[k]||"").split("/"));
+  return pos.map((p,j)=>({chord:m.c[p]||null,span:(pos[j+1]??N)-p,texts:frs.map(fr=>j===pos.length-1?fr.slice(j).join(" "):(fr[j]||""))}));
 }
+function lyBody(t){if(/^\s*>/.test(t))return `<span class="rgt">${esc(t.replace(/^\s*>\s*/,""))}</span>`;const i=t.indexOf(">");return i>0?`<span>${esc(t.slice(0,i))}</span><span class="rgt">${esc(t.slice(i+1).trim())}</span>`:`<span>${esc(t)}</span>`}
+function lyLines(texts,lsz,label){return texts.map((t,n)=>`<div class="ly${n?" vx":""}" style="font-size:${lsz}px">${label?`<span class="vn">${n+1}.</span>`:""}${lyBody(t)}</div>`).join("")}
 function renderSheet(s,el){
-  const N=beatsOf(s.time), per=+s.per||4, ms=s.measures;
+  const N=beatsOf(s.time), per=+s.per||4, ms=s.measures, V=s.verses||1;
   let used=usedChords(s);
   used.sort((a,b)=>{const ia=s.order.indexOf(a),ib=s.order.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib)});
   const shown=used.filter(c=>!s.hidden.includes(c));
   let h=`<div class="hd brk"><h2 class="ttl" style="font-size:${s.tsz||50}px">${esc(s.title||"제목 없음")}</h2>${s.artist?`<div class="art">${esc(s.artist)}</div>`:""}</div>`;
   if(shown.length){
-    h+=`<div class="box brk">`+shown.map(n=>{const c=getChord(n);return `<div class="cd"><div class="nm">${esc(n)}</div>${c?`<img alt="" src="${svgURI(svgBig(c))}">`:`<div style="height:75px;color:#b4432f;font-size:12px;padding-top:28px">모양 없음</div>`}</div>`}).join("")+`</div>`;
+    const bsz=s.bsz||(shown.length<=5?"l":shown.length===6?"m":"s");
+    h+=`<div class="box brk sz-${bsz}">`+shown.map(n=>{const c=getChord(n);return `<div class="cd"><div class="nm">${esc(n)}</div>${c?`<img alt="" src="${svgURI(svgBig(c))}">`:`<div style="height:75px;color:#b4432f;font-size:12px;padding-top:28px">모양 없음</div>`}</div>`}).join("")+`</div>`;
   }
   const rows=[];let cur=[];
   ms.forEach((m,i)=>{cur.push(i);if(cur.length>=per||m.brk){rows.push(cur);cur=[]}});
   if(cur.length) rows.push(cur);
   const lsz=s.lsz||17;
+  const labelAt=V>1?(s.pickup.on?"p":0):null;
+  const pickHTML=s.pickup.on?`<div class="m pick" data-i="p"><div class="segs"><div class="seg"><div class="ch"></div>${lyLines(LK.slice(0,V).map(k=>(s.pickup[k]||"").replace(/\//g," ")),lsz,labelAt==="p")}</div></div></div>`:"";
   h+=`<div class="rows">`;
+  if(!ms.length&&s.pickup.on) h+=`<div class="r brk">${pickHTML}</div>`;
   if(!ms.length) h+=`<div class="emptynote">왼쪽에서 마디를 추가하세요.</div>`;
   rows.forEach((row,ri)=>{
     h+=`<div class="r brk${ri===0&&s.time?" first":""}">`;
     if(ri===0&&s.time){const [a,b]=s.time.split("/");h+=`<div class="ts">${a}<br>${b}</div>`}
+    if(ri===0) h+=pickHTML;
     row.forEach((gi,mi)=>{
       const m=ms[gi], lastOverall=gi===ms.length-1, lastInRow=mi===row.length-1, prev=mi>0?ms[row[mi-1]]:null;
       let inner=mi===0?`<div class="mno">${gi+1}</div>`:"";
@@ -481,15 +511,11 @@ function renderSheet(s,el){
       if(m.re||lastInRow||lastOverall) inner+=`<div class="bar rt">${barSVG(m.re?"repEnd":lastOverall?"final":"single","r")}</div>`;
       if(m.v){const pm=ms[gi-1];const start=!(pm&&pm.v===m.v)||mi===0;inner+=`<div class="volta${start?" start":""}">${start?m.v+".":""}</div>`}
       if(m.mk&&MARKS[m.mk]) inner+=`<div class="mk ${MARKS[m.mk].s?"s":"e"+(m.v?" low":"")}">${MARKS[m.mk].h}</div>`;
-      const segs=segsOf(m,N), nCh=segs.filter(x=>x.chord).length;
-      inner+=`<div class="segs">`+segs.map(sg=>{
+      const segs=segsOf(m,N,V), nCh=segs.filter(x=>x.chord).length, lab=labelAt===gi;
+      inner+=`<div class="segs">`+segs.map((sg,j)=>{
         let chHTML="";
         if(sg.chord){const c=getChord(sg.chord);chHTML=`<span${c?"":` class="nodg"`}>${esc(sg.chord)}</span>${c?`<img alt="" src="${svgURI(svgMini(c))}">`:""}`}
-        let t=sg.text, ly;
-        const rg=/^\s*>/.test(t);
-        if(rg) ly=`<span class="rgt">${esc(t.replace(/^\s*>\s*/,""))}</span>`;
-        else{const i=t.indexOf(">");ly=i>0?`<span>${esc(t.slice(0,i))}</span><span class="rgt">${esc(t.slice(i+1).trim())}</span>`:`<span>${esc(t)}</span>`}
-        return `<div class="seg" style="flex-grow:${sg.span}"><div class="ch">${chHTML}</div><div class="ly" style="font-size:${lsz}px">${ly}</div></div>`;
+        return `<div class="seg" style="flex-grow:${sg.span}"><div class="ch">${chHTML}</div>${lyLines(sg.texts,lsz,lab&&j===0)}</div>`;
       }).join("")+`</div>`;
       h+=`<div class="m fit${nCh>=3?" stk":""}${mi===0?" hasno":""}" data-i="${gi}">${inner}</div>`;
     });
@@ -528,11 +554,13 @@ function cardHTML(m,i,N){
   <button class="ib" data-a="ins" data-m="${i}" title="바로 뒤에 빈 마디 넣기">+뒤에</button>
   <button class="ib del" data-a="del" data-m="${i}" aria-label="${i+1}마디 삭제">삭제</button></div>
   <div class="slots" style="grid-template-columns:repeat(${N},minmax(0,1fr))">${slots}</div>
-  <input class="ly" data-m="${i}" value="${esc(m.ly)}" placeholder="가사 (/ 로 나누면 코드 칸 위치에 맞춰 붙음)" aria-label="${i+1}마디 가사"></div>`;
+  ${lyInputs(m,i)}</div>`;
 }
+function lyInputs(o,i,pick){const V=song.verses||1;return LK.slice(0,V).map((k,n)=>`<input class="ly" data-m="${i}" data-lk="${k}" value="${esc(o[k]||"")}" placeholder="${V>1?(n+1)+"절 ":""}가사${pick?"":" (/ 로 나누면 코드 칸 위치에 맞춰 붙음)"}" aria-label="${pick?"못갖춘마디":(i+1)+"마디"} ${V>1?(n+1)+"절 ":""}가사">`).join("")}
+function pickCard(){return `<div class="mc pk" id="mcp"><div class="mh"><span class="no">못갖춘마디</span><span class="status">코드 없이 가사만, 1마디 앞에 붙습니다.</span></div>${lyInputs(song.pickup,"p",true)}</div>`}
 function drawMeasures(){
   const N=beatsOf(song.time);
-  $("mlist").innerHTML=song.measures.map((m,i)=>cardHTML(m,i,N)).join("")||`<div class="empty">마디가 없습니다. 아래 버튼으로 추가하세요.</div>`;
+  $("mlist").innerHTML=(song.pickup.on?pickCard():"")+(song.measures.map((m,i)=>cardHTML(m,i,N)).join("")||`<div class="empty">마디가 없습니다. 아래 버튼으로 추가하세요.</div>`);
 }
 function redrawCard(i){const el=$("mc"+i);if(!el)return;const t=document.createElement("div");t.innerHTML=cardHTML(song.measures[i],i,beatsOf(song.time));el.replaceWith(t.firstElementChild)}
 
@@ -555,12 +583,12 @@ ml.addEventListener("keydown",e=>{
   if(sl&&(e.key==="Enter"||e.key===" ")&&e.target===sl){e.preventDefault();if(picked)setSlot(+sl.dataset.m,+sl.dataset.k,picked)}
   if(sl&&(e.key==="Delete"||e.key==="Backspace")&&e.target===sl){e.preventDefault();setSlot(+sl.dataset.m,+sl.dataset.k,"")}
   if(e.target.matches("input.ly")&&e.key==="Enter"&&!e.isComposing){
-    e.preventDefault();const i=+e.target.dataset.m;
+    e.preventDefault();const i=e.target.dataset.m==="p"?-1:+e.target.dataset.m, lk=e.target.dataset.lk;
     if(i===song.measures.length-1){song.measures.push(newMeasure(beatsOf(song.time)));drawMeasures();changed(true)}
-    const n=$("mc"+(i+1));if(n){const inp=n.querySelector("input.ly");inp.focus();n.scrollIntoView({block:"nearest"})}
+    const n=$("mc"+(i+1));if(n){const inp=n.querySelector(`input.ly[data-lk="${lk}"]`)||n.querySelector("input.ly");inp.focus();n.scrollIntoView({block:"nearest"})}
   }
 });
-ml.addEventListener("input",e=>{if(e.target.matches("input.ly")){song.measures[+e.target.dataset.m].ly=e.target.value;changed()}});
+ml.addEventListener("input",e=>{if(e.target.matches("input.ly")){const d=e.target.dataset;(d.m==="p"?song.pickup:song.measures[+d.m])[d.lk]=e.target.value;changed()}});
 ml.addEventListener("change",e=>{if(e.target.matches("select.ms")){song.measures[+e.target.dataset.m][e.target.dataset.t]=e.target.value;changed()}});
 // 끌어놓기
 let drag=null;
@@ -606,7 +634,11 @@ function fillForm(){
   $("fTitle").value=song.title||"";$("fArtist").value=song.artist||"";
   $("fTime").value=song.time??"4/4";$("fPer").value=String(song.per||4);
   $("fTsz").value=String(song.tsz||50);$("fLsz").value=String(song.lsz||17);
+  $("fVerses").value=String(song.verses||1);$("fPick").checked=!!song.pickup.on;$("fBsz").value=song.bsz||"";
 }
+$("fBsz").addEventListener("change",()=>{song.bsz=$("fBsz").value;refresh()});
+$("fVerses").addEventListener("change",()=>{song.verses=+$("fVerses").value;drawMeasures();changed()});
+$("fPick").addEventListener("change",()=>{song.pickup.on=$("fPick").checked;drawMeasures();changed();if(song.pickup.on){const c=$("mcp");c.scrollIntoView({block:"nearest"});c.querySelector("input.ly").focus()}});
 let rT=0;
 function changed(pal){if(pal)drawPalette();clearTimeout(rT);rT=setTimeout(refresh,100)}
 function refresh(){
