@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우쿨렐레 리듬별 주법</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        p {
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        /* 🎵 리듬 선택 버튼 그룹 */
+        .rhythm-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            justify-content: center;
+            max-width: 900px;
+        }
+
+        .rhythm-btn {
+            background-color: #ffffff;
+            color: #34495e;
+            border: 2px solid #bdc3c7;
+            padding: 10px 18px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .rhythm-btn:hover {
+            border-color: #3498db;
+            color: #3498db;
+            transform: translateY(-2px);
+        }
+
+        .rhythm-btn.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        /* ⚙️ 컨트롤러 스타일 */
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            background: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        #playBtn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #playBtn:hover {
+            background-color: #27ae60;
+            transform: scale(1.05);
+        }
+
+        #playBtn.playing {
+            background-color: #e74c3c;
+        }
+
+        .bpm-slider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        /* 📊 리듬 시각화 바 컨테이너 (8열 Grid 시스템) */
+        .rhythm-container {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 12px;
+            max-width: 1000px;
+            width: 95%;
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+
+        .beat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 140px;
+            padding: 10px 5px;
+            border-radius: 12px;
+            background-color: #f8f9fa;
+            border: 3px solid #e9ecef;
+            transition: all 0.1s ease;
+        }
+
+        /* 화살표 기본 속성 */
+        .arrow {
+            font-size: 36px;
+            font-weight: bold;
+            color: #bdc3c7;
+            transition: transform 0.1s ease;
+        }
+
+        /* 주법 상태별 스타일 */
+        .beat-box.down .arrow { color: #3498db; }
+        .beat-box.up .arrow { color: #e67e22; }
+        
+        .beat-box.rest .arrow { color: #dcdde1; font-size: 24px; }
+        .beat-box.rest .strum-text { color: #bdc3c7; }
+
+        .beat-box.ghost {
+            border-style: dashed;
+            background-color: #fbfbfc;
+        }
+        .beat-box.ghost .arrow {
+            color: #dcdde1;
+            text-decoration: line-through;
+            opacity: 0.4;
+        }
+        .beat-box.ghost .strum-text { color: #bdc3c7; }
+
+        .beat-text { font-size: 13px; color: #7f8c8d; font-weight: 600; }
+        .strum-text { font-size: 15px; font-weight: bold; color: #2c3e50; }
+
+        /* 🔥 실시간 재생 하이라이트 효과 */
+        .beat-box.active {
+            background-color: #fff2cc;
+            border-color: #f1c40f;
+            transform: translateY(-8px);
+            box-shadow: 0 8px 15px rgba(241, 196, 15, 0.3);
+        }
+        .beat-box.active .arrow { transform: scale(1.2); }
+    </style>
+</head>
+<body>
+
+    <h1>우쿨렐레 리듬별 주법</h1>
+    <p>배우고 싶은 리듬 주법을 선택하고 재생 버튼을 눌러 박자를 따라 해보세요!</p>
+
+    <div class="rhythm-selector">
+        <button class="rhythm-btn active" data-rhythm="fourBeat">4비트</button>
+        <button class="rhythm-btn" data-rhythm="eightBeat">8비트</button>
+        <button class="rhythm-btn" data-rhythm="slowGogo">고고 (8비트)</button>
+        <button class="rhythm-btn" data-rhythm="calypso">칼립소</button>
+        <button class="rhythm-btn" data-rhythm="swing">스윙</button>
+        <button class="rhythm-btn" data-rhythm="slowGogo16v1">슬로우 고고 V1 (16비트)</button>
+        <button class="rhythm-btn" data-rhythm="slowGogo16v2">슬로우 고고 V2 (16비트)</button>
+        <button class="rhythm-btn" data-rhythm="slowGogo16v3">슬로우 고고 V3 (16비트)</button>
+    </div>
+
+    <div class="controls">
+        <button id="playBtn">시작 (Play)</button>
+        <div class="bpm-slider">
+            <label for="bpm">템포 (BPM): <span id="bpmVal">80</span></label>
+            <input type="range" id="bpm" min="50" max="150" value="80">
+        </div>
+    </div>
+
+    <div class="rhythm-container" id="rhythmContainer">
+        </div>
+
+    <script>
+        // 🎼 리듬 데이터 정의
+        const RHYTHM_DATA = {
+            fourBeat: [
+                { beat: "1", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "2", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "3", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "4", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "•", text: "쉬기", type: "rest" }
+            ],
+            eightBeat: [
+                { beat: "1", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" },
+                { beat: "2", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" },
+                { beat: "3", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" },
+                { beat: "4", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" }
+            ],
+            slowGogo: [
+                { beat: "1", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "2", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" },
+                { beat: "3", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "4", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" }
+            ],
+            calypso: [
+                { beat: "1", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "2", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" },
+                { beat: "3", arrow: "3", text: "(헛)", type: "ghost" }, { beat: "and", arrow: "⬆", text: "업", type: "up" },
+                { beat: "4", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" }
+            ],
+            swing: [
+                { beat: "1", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" },
+                { beat: "2", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" },
+                { beat: "3", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" },
+                { beat: "4", arrow: "⬇", text: "다운", type: "down" }, { beat: "and", arrow: "⬆", text: "업", type: "up" }
+            ],
+            // 🌟 16비트 슬로우 고고 V1: (다운-쉬기-쉬기-쉬기 / 다운-쉬기-다운-업 / 다운-쉬기-쉬기-쉬기 / 다운-쉬기-다운-업)
+            slowGogo16v1: [
+                { beat: "1", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "•", text: "쉬기", type: "rest" }, { beat: "a", arrow: "•", text: "쉬기", type: "rest" },
+
+                { beat: "2", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "⬇", text: "다운", type: "down" }, { beat: "a", arrow: "⬆", text: "업", type: "up" },
+
+                { beat: "3", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "•", text: "쉬기", type: "rest" }, { beat: "a", arrow: "•", text: "쉬기", type: "rest" },
+
+                { beat: "4", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "⬇", text: "다운", type: "down" }, { beat: "a", arrow: "⬆", text: "업", type: "up" }
+            ],
+            // 🌟 16비트 슬로우 고고 V2: (다운-쉬기-쉬기-업 / 다운-쉬기-다운-업 / 다운-쉬기-쉬기-업 / 다운-쉬기-다운-업)
+            slowGogo16v2: [
+                { beat: "1", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "•", text: "쉬기", type: "rest" }, { beat: "a", arrow: "⬆", text: "업", type: "up" },
+
+                { beat: "2", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "⬇", text: "다운", type: "down" }, { beat: "a", arrow: "⬆", text: "업", type: "up" },
+
+                { beat: "3", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "•", text: "쉬기", type: "rest" }, { beat: "a", arrow: "⬆", text: "업", type: "up" },
+
+                { beat: "4", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "⬇", text: "다운", type: "down" }, { beat: "a", arrow: "⬆", text: "업", type: "up" }
+            ],
+            // 🌟 16비트 슬로우 고고 V3: (다운-쉬기-쉬기-쉬기 / 다운-쉬기-다운-업 / 쉬기-업-다운-쉬기 / 다운-쉬기-다운-업)
+            slowGogo16v3: [
+                { beat: "1", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "•", text: "쉬기", type: "rest" }, { beat: "a", arrow: "•", text: "쉬기", type: "rest" },
+
+                { beat: "2", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "⬇", text: "다운", type: "down" }, { beat: "a", arrow: "⬆", text: "업", type: "up" },
+
+                { beat: "3", arrow: "•", text: "쉬기", type: "rest" }, { beat: "e", arrow: "⬆", text: "업", type: "up" },
+                { beat: "and", arrow: "⬇", text: "다운", type: "down" }, { beat: "a", arrow: "•", text: "쉬기", type: "rest" },
+
+                { beat: "4", arrow: "⬇", text: "다운", type: "down" }, { beat: "e", arrow: "•", text: "쉬기", type: "rest" },
+                { beat: "and", arrow: "⬇", text: "다운", type: "down" }, { beat: "a", arrow: "⬆", text: "업", type: "up" }
+            ]
+        };
+
+        const rhythmContainer = document.getElementById('rhythmContainer');
+        const playBtn = document.getElementById('playBtn');
+        const bpmSlider = document.getElementById('bpm');
+        const bpmVal = document.getElementById('bpmVal');
+        const rhythmBtns = document.querySelectorAll('.rhythm-btn');
+
+        let currentRhythm = 'fourBeat';
+        let isPlaying = false;
+        let currentStep = 0;
+        let timeoutId = null; 
+        let audioCtx = null;
+
+        // 화면 렌더링 함수
+        function renderRhythm(rhythmKey) {
+            rhythmContainer.innerHTML = '';
+            RHYTHM_DATA[rhythmKey].forEach(data => {
+                const box = document.createElement('div');
+                box.className = `beat-box ${data.type}`;
+                box.innerHTML = `
+                    <span class="beat-text">${data.beat}</span>
+                    <span class="arrow">${data.arrow}</span>
+                    <span class="strum-text">${data.text}</span>
+                `;
+                rhythmContainer.appendChild(box);
+            });
+        }
+
+        // 초기 화면 설정
+        renderRhythm(currentRhythm);
+
+        // 오디오 비프음 기능
+        function playSound(type) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (type === 'rest' || type === 'ghost') return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'down') {
+                osc.frequency.setValueAtTime(330, audioCtx.currentTime); // 낮은 미
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            } else if (type === 'up') {
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime); // 높은 라
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            }
+
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.08);
+        }
+
+        // ⏱ 루프 루틴 메인 함수
+        function playRoutine() {
+            const boxes = document.querySelectorAll('.beat-box');
+            boxes.forEach(b => b.classList.remove('active'));
+
+            const currentBox = boxes[currentStep];
+            if (currentBox) {
+                currentBox.classList.add('active');
+                const type = RHYTHM_DATA[currentRhythm][currentStep].type;
+                playSound(type);
+            }
+
+            const totalSteps = RHYTHM_DATA[currentRhythm].length;
+            currentStep = (currentStep + 1) % totalSteps;
+
+            // 💡 리듬 타이밍 딜레이 계산
+            const bpm = parseInt(bpmSlider.value);
+            
+            // 8비트(길이 8)는 1박을 2개로, 16비트(길이 16)는 1박을 4개로 쪼갬
+            const divisor = totalSteps / 4; 
+            let nextDelay = (60000 / bpm) / divisor;
+
+            // 스윙 리듬 셔플 타이밍 예외 처리
+            if (currentRhythm === 'swing') {
+                const triplet = (60000 / bpm) / 3; 
+                if (currentStep % 2 === 1) {
+                    nextDelay = triplet * 2; 
+                } else {
+                    nextDelay = triplet * 1;
+                }
+            }
+
+            timeoutId = setTimeout(playRoutine, nextDelay);
+        }
+
+        function start() {
+            isPlaying = true;
+            playBtn.textContent = '정지 (Stop)';
+            playBtn.classList.add('playing');
+            currentStep = 0;
+            playRoutine();
+        }
+
+        function stop() {
+            isPlaying = false;
+            playBtn.textContent = '시작 (Play)';
+            playBtn.classList.remove('playing');
+            clearTimeout(timeoutId);
+            const boxes = document.querySelectorAll('.beat-box');
+            boxes.forEach(b => b.classList.remove('active'));
+        }
+
+        // 🔘 리듬 전환 버튼 이벤트 등록
+        rhythmBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                rhythmBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                currentRhythm = e.target.getAttribute('data-rhythm');
+                
+                stop(); // 리듬 종류가 바뀌면 정지 후 새로 그리기
+                renderRhythm(currentRhythm);
+            });
+        });
+
+        // 시작/정지 제어
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) stop();
+            else start();
+        });
+
+        // 실시간 템포 조절
+        bpmSlider.addEventListener('input', (e) => {
+            bpmVal.textContent = e.target.value;
+        });
+    </script>
+</body>
+</html>
