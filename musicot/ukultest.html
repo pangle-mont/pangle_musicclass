@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<base target="_top">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>우쿨렐레 평가곡 선택</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
 <style>
 :root{
@@ -86,10 +87,6 @@ td .lock{font-size:12px;color:var(--muted);margin-left:6px}
   <!-- 1. 첫 화면 -->
   <section id="vLogin">
     <div class="top"><div><h1>우쿨렐레 평가곡 선택</h1><p class="sub">학번과 이름을 입력하면 내 권장 난이도와 곡 목록이 나와요.</p></div></div>
-    <div id="inapp" class="msg warn" hidden style="margin-bottom:14px">
-      <b>카카오톡·네이버 등 앱 안에서 열었다면 들어가기가 안 될 수 있어요.</b><br>
-      오른쪽 위(또는 아래) <b>⋮ / 공유</b> 메뉴 → <b>다른 브라우저로 열기</b>(Chrome, Safari, 삼성 인터넷)를 눌러 다시 열어 주세요.
-    </div>
     <div class="notice" role="note">
       <h2>평가곡 선택 유의사항</h2>
       <ol>
@@ -185,47 +182,48 @@ td .lock{font-size:12px;color:var(--muted);margin-left:6px}
 
 <script>
 const $ = id => document.getElementById(id);
-(function(){
-  var ua = navigator.userAgent || '';
-  if (/KAKAOTALK|NAVER|Instagram|FBAN|FBAV|Line\/|everytimeApp|DaumApps|SamsungBrowser\/[0-9.]+ .*CrossApp|; wv\)/i.test(ua)) {
-    var el = document.getElementById('inapp'); if (el) el.hidden = false;
+
+/* ===== 설정: Apps Script 웹앱 배포 주소 (/exec 로 끝나는 주소) ===== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbws4msf031oameWivDC2cNuSbwAHbVywcesFmoqxZEUPemcDFwNvG63GxjpE-J01TG2/exec';
+
+// 서버 요청: 시간 제한 + 실패 시 1회 자동 재시도
+async function api(body, timeoutMs = 20000){
+  for (let attempt = 0; attempt < 2; attempt++){
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body), signal: ctrl.signal, redirect: 'follow' });
+      clearTimeout(t);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (data && data.retry && attempt === 0){ await new Promise(r => setTimeout(r, 1500)); continue; }
+      return data;
+    } catch (err) {
+      clearTimeout(t);
+      if (attempt === 0){ await new Promise(r => setTimeout(r, 1500)); continue; }
+      throw err;
+    }
   }
-})();
+}
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let D = null, me = null;
 
 function show(v){ ['vLogin','vMain','vDone'].forEach(x => $(x).hidden = x !== v); $('bar').hidden = v !== 'vMain'; window.scrollTo(0,0); }
 
 /* 로그인 */
-$('loginForm').addEventListener('submit', e => {
+$('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   if (!$('agree').checked){ $('loginMsg').textContent = '유의사항을 읽고 확인란에 표시하세요.'; $('loginMsg').hidden = false; return; }
   $('loginMsg').hidden = true; $('loginBtn').disabled = true; $('loginBtn').textContent = '확인 중…';
-  let finished = false;
-  const reset = () => { finished = true; clearTimeout(timer); $('loginBtn').disabled = false; $('loginBtn').textContent = '들어가기'; };
-  const fail = text => { reset(); $('loginMsg').innerHTML = text; $('loginMsg').hidden = false; };
-  const timer = setTimeout(() => {
-    if (finished) return;
-    fail('응답이 없어요. 아래 방법으로 다시 시도하세요.<br>① 카카오톡 등 앱 안이라면 <b>다른 브라우저로 열기</b><br>② Chrome에 구글 계정이 여러 개 로그인되어 있다면 <b>시크릿 탭</b>에서 열기<br>③ 와이파이/데이터 연결 확인 후 새로고침');
-  }, 20000);
-  const id = $('sid').value, nm = $('sname').value;
-  const call = retried => google.script.run
-      .withSuccessHandler(data => {
-        if (finished) return;
-        if (data && data.error){ fail(esc(data.error)); return; }
-        reset();
-        try { render(data); } catch (err) { fail('화면을 여는 중 오류가 났어요. 다른 브라우저로 열어 주세요. (' + esc(err.message) + ')'); }
-      })
-      .withFailureHandler(err => {
-        if (finished) return;
-        if (!retried){ setTimeout(() => { if (!finished) call(true); }, 1500); return; } // 일시적인 서버 오류는 한 번 더 시도
-        fail('잠시 연결이 불안정해요. 다시 <b>들어가기</b>를 눌러 주세요.<br>계속 안 되면 <b>다른 브라우저</b>나 <b>시크릿 탭</b>에서 열어 주세요.');
-      })
-      .login(id, nm);
+  const done = () => { $('loginBtn').disabled = false; $('loginBtn').textContent = '들어가기'; };
+  const fail = html => { done(); $('loginMsg').innerHTML = html; $('loginMsg').hidden = false; };
   try {
-    call(false);
+    const data = await api({ action: 'login', id: $('sid').value, name: $('sname').value });
+    if (data && data.error){ fail(esc(data.error)); return; }
+    done();
+    render(data);
   } catch (err) {
-    fail('이 브라우저에서는 연결할 수 없어요. <b>Chrome, Safari, 삼성 인터넷</b>으로 열어 주세요.');
+    fail('연결이 불안정해요. 와이파이/데이터를 확인하고 다시 <b>들어가기</b>를 눌러 주세요.');
   }
 });
 
@@ -309,27 +307,25 @@ function calc(){
 }
 
 /* 제출 */
-$('submitBtn').addEventListener('click', () => {
+$('submitBtn').addEventListener('click', async () => {
   const s = currentSong(); if (!s) return;
   $('submitMsg').hidden = true; $('submitBtn').disabled = true; $('submitBtn').textContent = '제출 중…';
-  google.script.run
-    .withSuccessHandler(r => {
-      $('submitBtn').textContent = '이 곡으로 제출하기';
-      if (r && r.error){ calc(); $('submitMsg').textContent = r.error; $('submitMsg').hidden = false; return; }
-      $('dTitle').textContent = r.title + (r.artist ? ' / ' + r.artist : '');
-      $('dDetail').textContent = `${r.total}점 · ${r.verdict}`;
-      D.previous = { title: r.title, artist: r.artist, total: r.total, verdict: r.verdict, time: '방금' };
-      show('vDone');
-    })
-    .withFailureHandler(err => {
-      $('submitBtn').textContent = '이 곡으로 제출하기'; calc();
-      $('submitMsg').textContent = err.message; $('submitMsg').hidden = false;
-    })
-    .submitChoice({
+  const showErr = msg => { $('submitBtn').textContent = '이 곡으로 제출하기'; calc(); $('submitMsg').textContent = msg; $('submitMsg').hidden = false; };
+  try {
+    const r = await api({ action: 'submit', payload: {
       id: me.id, name: me.name, songRow: s.row,
       rhythms: [...document.querySelectorAll('input[name=rh]:checked')].map(i => i.value),
       variations: [...document.querySelectorAll('input[name=var]:checked')].map(i => i.value)
-    });
+    }});
+    if (r && r.error){ showErr(r.error); return; }
+    $('submitBtn').textContent = '이 곡으로 제출하기';
+    $('dTitle').textContent = r.title + (r.artist ? ' / ' + r.artist : '');
+    $('dDetail').textContent = `${r.total}점 · ${r.verdict}`;
+    D.previous = { title: r.title, artist: r.artist, total: r.total, verdict: r.verdict, time: '방금' };
+    show('vDone');
+  } catch (err) {
+    showErr('제출이 확인되지 않았어요. 연결을 확인하고 다시 눌러 주세요.');
+  }
 });
 
 $('again').addEventListener('click', () => render(D));
