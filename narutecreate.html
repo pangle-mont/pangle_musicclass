@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>생태 소리를 담은 환경 음악 창작하기</title>
+<style>
+  :root { --g:#2f7d5b; --g2:#e6f3ec; --line:#d6ddd9; --ink:#1f2a25; --sub:#5b6b63; --warn:#b5482f; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; color:var(--ink); background:#f6f8f7; font-size:16px; line-height:1.5; }
+  header { background:var(--g); color:#fff; padding:14px 16px; }
+  header h1 { margin:0; font-size:19px; }
+  header p { margin:4px 0 0; font-size:13px; opacity:.9; }
+  .wrap { max-width:860px; margin:0 auto; padding:12px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px; margin:12px 0; }
+  .card h2 { margin:0 0 4px; font-size:18px; color:var(--g); }
+  .card h3 { margin:14px 0 6px; font-size:16px; }
+  .desc { color:var(--sub); font-size:14px; margin:0 0 10px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .row > * { flex:1 1 140px; }
+  label.f { display:block; font-weight:600; margin:12px 0 4px; font-size:15px; }
+  input[type=text], select, textarea { width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font-size:16px; font-family:inherit; background:#fff; }
+  textarea { min-height:70px; resize:vertical; }
+  textarea.out { background:#f3f6f4; min-height:140px; font-size:14px; font-family:ui-monospace, Menlo, monospace; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chips label { cursor:pointer; }
+  .chips input { position:absolute; opacity:0; pointer-events:none; }
+  .chips span { display:inline-block; padding:7px 12px; border:1px solid var(--line); border-radius:999px; background:#fff; font-size:14px; }
+  .chips input:checked + span { background:var(--g); color:#fff; border-color:var(--g); }
+  .hint-chips span { background:var(--g2); border-color:var(--g2); cursor:pointer; }
+  button { font-family:inherit; font-size:16px; border-radius:8px; border:1px solid var(--g); background:#fff; color:var(--g); padding:10px 14px; cursor:pointer; }
+  button.main { background:var(--g); color:#fff; font-weight:700; }
+  button.q { width:24px; height:24px; padding:0; border-radius:50%; font-size:13px; font-weight:700; line-height:22px; margin-left:4px; vertical-align:middle; }
+  .tabs { display:flex; gap:6px; position:sticky; top:0; background:#f6f8f7; padding:8px 0; z-index:5; }
+  .tabs button { flex:1; }
+  .tabs button.on { background:var(--g); color:#fff; }
+  .lesson { display:none; }
+  .lesson.on { display:block; }
+  .sec { border:1px dashed var(--line); border-radius:10px; padding:10px; margin:10px 0; }
+  .sec h4 { margin:0 0 4px; font-size:15px; }
+  .msg { font-size:14px; margin-top:6px; }
+  .msg.err { color:var(--warn); }
+  .msg.ok { color:var(--g); }
+  .status { font-size:13px; color:var(--sub); }
+  .note { background:#fff8e6; border:1px solid #f0dca8; border-radius:8px; padding:10px; font-size:14px; margin:8px 0; }
+  details { margin:8px 0; }
+  details summary { cursor:pointer; font-weight:600; color:var(--g); }
+  .count { font-size:12px; color:var(--sub); text-align:right; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:20; padding:20px; }
+  .modal.on { display:flex; }
+  .modal .box { background:#fff; border-radius:12px; padding:16px; max-width:420px; width:100%; }
+  .modal .box h3 { margin:0 0 6px; color:var(--g); }
+  a.btn { display:inline-block; font-size:16px; border-radius:8px; border:1px solid var(--g); background:var(--g); color:#fff; padding:10px 14px; text-decoration:none; }
+  #drive { font-size:14px; color:var(--g); }
+  .savebar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>생태 소리를 담은 환경 음악 창작하기</h1>
+  <p>나는 작곡가, AI는 내 지시를 따르는 연주자입니다. 같은 학번으로 다시 제출하면 고친 내용으로 바뀝니다.</p>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <div class="row">
+      <div><label class="f">학번</label><input type="text" id="sid" inputmode="numeric" placeholder="예: 10101"></div>
+      <div><label class="f">이름</label><input type="text" id="sname" placeholder="이름"></div>
+    </div>
+    <div class="savebar">
+      <button class="main" onclick="loadMe()">시작하기 / 불러오기</button>
+      <span class="status" id="loadMsg">처음이면 학번과 이름을 쓰고 시작하기를 누르세요.</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="on" onclick="showLesson(1)" id="t1">1차시 준비</button>
+    <button onclick="showLesson(2)" id="t2">2차시 창작</button>
+    <button onclick="showLesson(3)" id="t3">3차시 성찰</button>
+  </div>
+
+  <!-- ===================== 1차시 ===================== -->
+  <div class="lesson on" id="L1">
+    <div class="card">
+      <h2>① 음악이 전할 메시지 정하기</h2>
+      <p class="desc">우리 지역의 장소와 연결해 메시지를 정합니다.</p>
+      <label class="f">장소</label>
+      <input type="text" data-key="1-장소" id="place" placeholder="예시를 누르거나 직접 쓰세요">
+      <div class="chips hint-chips" id="placeHints"></div>
+      <label class="f">주제</label>
+      <input type="text" data-key="1-주제" id="topic" placeholder="예시를 누르거나 직접 쓰세요">
+      <div class="chips hint-chips" id="topicHints"></div>
+      <label class="f">메시지</label>
+      <textarea data-key="1-메시지" id="message" placeholder="예: 갯골생태공원의 갯벌이 개발로 줄어들고 있다. 그래서 우리는 습지를 지키자."></textarea>
+    </div>
+
+    <div class="card">
+      <h2>② 소리 재료 분석하기</h2>
+      <p class="desc">선생님이 준 소리 중 메시지에 어울리는 소리를 골라 특징을 분석합니다.</p>
+      <label class="f">소리 번호</label>
+      <select data-key="2-소리번호" id="soundNo" onchange="onSound()"><option value="">소리를 고르세요</option></select>
+      <div id="player" class="sec" style="display:none">
+        <audio id="audio" controls style="width:100%"></audio>
+        <div class="savebar"><a id="dl" class="btn" download>내려받기</a><a id="drive" target="_blank" rel="noopener">드라이브에서 열기</a><span class="status" id="playMsg"></span></div>
+      </div>
+      <label class="f">소리 이름</label>
+      <input type="text" data-key="2-소리이름" id="soundName">
+      <label class="f">음색(느낌)<button class="q" data-term="음색">?</button></label>
+      <input type="text" data-key="2-음색" placeholder="예: 높고 또렷하게 들리는 휘파람 같은 느낌 / 맑고 청량한 작은 관악기 느낌">
+      <label class="f">리듬<button class="q" data-term="리듬">?</button></label>
+      <div class="chips" data-group="2-리듬" data-type="radio" data-items="규칙적|불규칙적"></div>
+      <label class="f">높낮이<button class="q" data-term="높낮이">?</button></label>
+      <div class="chips" data-group="2-높낮이" data-type="radio" data-items="높음|낮음|오르내림"></div>
+      <label class="f">셈여림<button class="q" data-term="셈여림">?</button></label>
+      <div class="chips" data-group="2-셈여림" data-type="radio" data-items="아주 세게|세게|여리게|아주 여리게|점점 세게|점점 여리게"></div>
+      <label class="f">곡에서의 역할<button class="q" data-term="역할">?</button></label>
+      <div class="chips" data-group="2-역할" data-type="radio" data-items="도입|배경음|반복되는 소리를 리듬으로 활용|하이라이트|마무리"></div>
+      <label class="f">쓸 구간<button class="q" data-term="쓸 구간">?</button></label>
+      <div class="row">
+        <input type="text" data-key="2-구간시작" id="segA" placeholder="시작 예: 0:05" oninput="checkSeg()">
+        <input type="text" data-key="2-구간끝" id="segB" placeholder="끝 예: 0:35" oninput="checkSeg()">
+      </div>
+      <div class="msg" id="segMsg">SUNO가 소리를 인식하려면 20초 이상이 필요하고, 무료 계정은 60초까지 올릴 수 있습니다.</div>
+      <label class="f">메시지를 전하기에 알맞은 이유</label>
+      <textarea data-key="2-이유" placeholder="예: 물 빠지는 소리가 갯벌이 숨 쉬는 것처럼 들려서, 사라지는 갯벌을 표현하기 좋다."></textarea>
+    </div>
+
+    <div class="card">
+      <h2>③ 그림 악보 만들기</h2>
+      <p class="desc">구간마다 음악 요소를 바꿔 곡의 흐름을 설계합니다. 다 쓰면 그림 악보 프롬프트가 만들어집니다.</p>
+      <div id="sections"></div>
+      <label class="f">테마&amp;의미<button class="q" data-term="테마&amp;의미">?</button></label>
+      <textarea data-key="3-테마와의미" placeholder="예: 파란 동그라미 = 갯벌 물소리, 선이 굵을수록 세게, 검은색 네모 = 오염된 하늘"></textarea>
+      <div class="savebar"><button onclick="makeScorePrompt(true)">그림 악보 프롬프트 만들기</button></div>
+      <label class="f">그림 악보 프롬프트<button class="q" data-term="프롬프트">?</button></label>
+      <textarea class="out" data-key="3-그림악보프롬프트" id="scorePrompt" readonly></textarea>
+      <div class="savebar"><button onclick="copyText('scorePrompt')">복사하기</button>
+        <span class="status">GPT·Gemini 등에 붙여 넣어 그림 악보를 만들고, 학급 Padlet에 올리세요.</span></div>
+    </div>
+
+    <div class="card">
+      <div class="savebar"><button class="main" onclick="saveLesson(1)">1차시 제출</button><span class="status" id="s1"></span></div>
+      <div class="msg" id="m1"></div>
+    </div>
+  </div>
+
+  <!-- ===================== 2차시 ===================== -->
+  <div class="lesson" id="L2">
+    <div class="card">
+      <h2>④ AI 작곡 의뢰 작성하기</h2>
+      <p class="desc">③에서 설계한 곡의 흐름을 AI가 알아듣는 말로 옮깁니다.</p>
+      <div class="sec">
+        <h4>1단계: SUNO에 내 소리 올리기<button class="q" data-term="업로드 태그">?</button></h4>
+        <p class="desc">고급(Custom) 모드에서 소리를 올리면 "Describes the contents of your uploaded audio" 화면이 나옵니다.</p>
+        <ol style="margin:0 0 8px 18px; padding:0; font-size:15px">
+          <li>아래 <b>업로드 설명</b>을 복사해 설명 칸에 붙여 넣습니다.</li>
+          <li>아래 <b>추천 태그</b>만 누릅니다. Voice, Spoken Word, Full Song, Song Demo, Instrument Stem은 누르지 않습니다.</li>
+          <li>Continue를 누릅니다.</li>
+          <li>Remix 메뉴에서 기본으로 선택된 <b>Cover가 아니라 Sample</b>을 고릅니다.<button class="q" data-term="Sample">?</button></li>
+          <li>파형의 분홍색 상자를 움직이거나 Selection 칸에 시간을 써서 아래 <b>자를 구간</b>으로 맞춥니다.</li>
+        </ol>
+        <div class="savebar"><button onclick="makeSunoPrompt(true)">업로드 설명 만들기</button></div>
+        <label class="f">업로드 설명 (설명 칸에 붙여 넣기)</label>
+        <textarea class="out" data-key="4-업로드설명" id="pUpload" readonly style="min-height:80px"></textarea>
+        <div class="savebar"><button onclick="copyText('pUpload')">복사하기</button></div>
+        <label class="f">추천 태그</label>
+        <input type="text" data-key="4-업로드태그" id="pTags" readonly>
+        <div class="msg" id="segInfo"></div>
+      </div>
+      <h3>2단계: 곡 의뢰 내용 쓰기</h3>
+      <label class="f">곡 제목</label>
+      <input type="text" data-key="4-곡제목" id="songTitle">
+      <label class="f">스타일 키워드 (3~5개)<button class="q" data-term="스타일 키워드">?</button></label>
+      <div class="desc">분위기</div>
+      <div class="chips" data-group="4-분위기" data-type="checkbox" id="moodChips"></div>
+      <div class="desc" style="margin-top:6px">장르</div>
+      <div class="chips" data-group="4-장르" data-type="checkbox" id="genreChips"></div>
+      <input type="text" data-key="4-스타일직접" placeholder="직접 넣고 싶은 키워드 (영어, 쉼표로 구분)" style="margin-top:8px">
+      <label class="f">꼭 지켜야 할 것 1가지</label>
+      <div class="chips" data-group="4-꼭지킬것" data-type="radio" id="mustChips"></div>
+      <input type="text" data-key="4-꼭지킬것직접" placeholder="직접 쓰기 (영어 권장)" style="margin-top:8px">
+      <label class="f">(선택) 보컬<button class="q" data-term="보컬">?</button></label>
+      <div class="chips" data-group="4-보컬" data-type="radio" data-items="연주곡(보컬 없음)|여성 보컬|남성 보컬|혼성 보컬"></div>
+      <label class="f">(선택) 가사 2~4줄</label>
+      <textarea data-key="4-가사" placeholder="보컬을 고른 경우에만 들어갑니다."></textarea>
+      <div class="savebar"><button onclick="makeSunoPrompt(true)">SUNO 프롬프트 만들기</button></div>
+      <div class="msg" id="sunoMsg"></div>
+
+      <label class="f">① Lyrics 칸에 붙여 넣기 — 구간 지시<button class="q" data-term="구간 지시">?</button></label>
+      <p class="desc">SUNO Lyrics 칸에 들어 있는 [Instrumental]을 포함해 내용을 모두 지우고 붙여 넣으세요. 연주곡이면 웹앱이 [Instrumental]을 다시 넣어 줍니다.</p>
+      <textarea class="out" data-key="4-구간프롬프트" id="pLyrics" readonly></textarea>
+      <div class="savebar"><button onclick="copyText('pLyrics')">복사하기</button></div>
+
+      <label class="f">② Style 칸에 붙여 넣기<button class="q" data-term="Style 칸">?</button></label>
+      <textarea class="out" data-key="4-Style프롬프트" id="pStyle" readonly></textarea>
+      <div class="count" id="pStyleCount"></div>
+      <div class="savebar"><button onclick="copyText('pStyle')">복사하기</button></div>
+
+      <div class="note">SUNO 순서: 고급(Custom) 모드 → 소리 업로드 → 업로드 설명 붙여 넣고 추천 태그 누르기 → Continue → Remix에서 Sample 고르기 → 쓸 구간 맞추기 → Lyrics 칸 비우고 ① 붙여 넣기 → Style 칸에 ② 붙여 넣기 → 곡 제목 입력 → 생성. 실존 가수·곡 이름은 쓰지 않습니다.</div>
+      <div class="sec">
+        <h4>3단계: 음원 링크 제출 [중간 창작물]<button class="q" data-term="공유 링크">?</button></h4>
+        <p class="desc">만들어진 곡마다 <b>Share(공유) 버튼 → 링크 복사</b>를 한 뒤, 아래 칸과 학급 Padlet에 붙여 넣으세요. 프롬프트도 Padlet에 함께 올립니다.</p>
+        <label class="f">음원 1 링크</label><input type="text" data-key="4-음원1링크" placeholder="https://suno.com/...">
+        <label class="f">음원 2 링크</label><input type="text" data-key="4-음원2링크" placeholder="https://suno.com/...">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>④-2 수정 및 재구성</h2>
+      <p class="desc">만들어진 2곡을 듣고, 내 의도가 반영됐는지 확인한 뒤 수정을 요청합니다.</p>
+      <h3>음원 1</h3>
+      <label class="f">잘된 점</label><textarea data-key="4-2-음원1잘된점"></textarea>
+      <label class="f">의도와 다른 점</label><textarea data-key="4-2-음원1다른점"></textarea>
+      <h3>음원 2</h3>
+      <label class="f">잘된 점</label><textarea data-key="4-2-음원2잘된점"></textarea>
+      <label class="f">의도와 다른 점</label><textarea data-key="4-2-음원2다른점"></textarea>
+      <label class="f">최종 선택</label>
+      <div class="chips" data-group="4-2-최종선택" data-type="radio" data-items="음원 1|음원 2"></div>
+      <label class="f">고른 이유</label><textarea data-key="4-2-이유"></textarea>
+
+      <h3>수정 지시</h3>
+      <div id="mods"></div>
+      <div class="savebar"><button onclick="makeRevision(true)">수정 프롬프트 만들기</button></div>
+      <div class="msg" id="revMsg"></div>
+      <label class="f">수정 지시 내용</label>
+      <textarea class="out" data-key="4-2-수정지시" id="revText" readonly style="min-height:60px"></textarea>
+      <label class="f">① 수정 Lyrics 칸 — 구간 지시</label>
+      <textarea class="out" data-key="4-2-수정구간프롬프트" id="rLyrics" readonly></textarea>
+      <div class="savebar"><button onclick="copyText('rLyrics')">복사하기</button></div>
+      <label class="f">② 수정 Style 칸</label>
+      <textarea class="out" data-key="4-2-수정Style프롬프트" id="rStyle" readonly></textarea>
+      <div class="savebar"><button onclick="copyText('rStyle')">복사하기</button></div>
+      <div class="note">수정 프롬프트로 다시 생성한 뒤, 마음에 드는 곡의 Share(공유) 버튼으로 링크를 복사해 아래 칸과 학급 Padlet에 [최종 창작물]로 올리세요.</div>
+      <label class="f">최종 창작물 링크</label><input type="text" data-key="4-2-최종링크" placeholder="https://suno.com/...">
+    </div>
+
+    <div class="card">
+      <h2>⑤ 작품 해설 쓰기</h2>
+      <p class="desc">빈칸을 채우면 작품 설명 카드가 만들어집니다. 학급 Padlet에 최종 창작물 링크와 함께 올리세요.</p>
+      <label class="f">곡 제목</label><input type="text" data-key="5-곡제목" id="cardTitle">
+      <h3>해설 1 — 이 곡은 ○○(소리)를 활용하여 ○○(주제)를 이야기한다.</h3>
+      <div class="row">
+        <input type="text" data-key="5-소리" id="cardSound" placeholder="소리 (예: 갯벌 물 빠지는 소리)">
+        <input type="text" data-key="5-주제" placeholder="주제 (예: 사라지는 갯벌)">
+      </div>
+      <h3>해설 2 — ○○(구간)에서 ○○(음악 요소)를 ○○(특징)하여 ○○(의도)를 표현했다.</h3>
+      <div class="row">
+        <select data-key="5-구간"><option value="">구간</option><option>도입</option><option>전개</option><option>절정</option><option>마무리</option></select>
+        <select data-key="5-음악요소"><option value="">음악 요소</option><option>빠르기</option><option>셈여림</option><option>음색</option><option>리듬</option><option>생태 소리</option></select>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input type="text" data-key="5-특징" placeholder="특징 (예: 점점 세게)">
+        <input type="text" data-key="5-의도" placeholder="의도 (예: 다가오는 위기)">
+      </div>
+      <h3>해설 3 — 이 곡을 들은 사람이 ○○(감정·분위기)를 느끼고, ○○(바라는 변화) 되기를 바란다.</h3>
+      <div class="row">
+        <input type="text" data-key="5-감정" placeholder="감정·분위기 (예: 안타까움)">
+        <input type="text" data-key="5-바라는변화" placeholder="바라는 변화 (예: 갯벌 보호에 관심을 갖게)">
+      </div>
+      <div class="savebar"><button onclick="makeCard(true)">작품 설명 카드 만들기</button></div>
+      <textarea class="out" data-key="5-작품카드" id="card" readonly></textarea>
+      <div class="savebar"><button onclick="copyText('card')">복사하기</button></div>
+    </div>
+
+    <div class="card">
+      <div class="savebar"><button class="main" onclick="saveLesson(2)">2차시 제출</button><span class="status" id="s2"></span></div>
+      <div class="msg" id="m2"></div>
+    </div>
+  </div>
+
+  <!-- ===================== 3차시 ===================== -->
+  <div class="lesson" id="L3">
+    <div class="card">
+      <h2>감상 댓글 (Padlet)</h2>
+      <p class="desc">친구 작품 3개 이상에 댓글을 답니다. 양식: "○○구간에서 ○○소리의 ○○변화 때문에 ○○가 느껴졌다."</p>
+    </div>
+
+    <div class="card">
+      <h2>⑥ 저작권 체크리스트</h2>
+      <h3>알아보기 (무료 계정으로 만든 내 곡 기준)</h3>
+      <label class="f">창작한 곡을 SNS에 올려도 되는가?<button class="q" data-term="비상업적 이용">?</button></label>
+      <div class="chips" data-group="6-SNS게시" data-type="radio" data-items="예|아니오"></div>
+      <input type="text" data-key="6-SNS조건" placeholder="조건이 있다면? (예: 돈을 벌지 않고, 출처를 밝히면)" style="margin-top:8px">
+      <label class="f">창작한 곡을 상업적으로 이용해 돈을 벌 수 있는가?<button class="q" data-term="상업적 이용">?</button></label>
+      <div class="chips" data-group="6-상업적이용" data-type="radio" data-items="예|아니오"></div>
+      <label class="f">올릴 때 출처 표시가 필요한가?<button class="q" data-term="출처 표시">?</button></label>
+      <div class="chips" data-group="6-출처표시" data-type="radio" data-items="예|아니오"></div>
+
+      <h3>점검하기 (모두 '예'가 되어야 합니다)</h3>
+      <label class="f">출처가 확인된 소리만 사용했다.</label>
+      <div class="chips" data-group="6-출처확인소리" data-type="radio" data-items="예|아니오"></div>
+      <label class="f">실존하는 가수나 곡 이름을 프롬프트에 쓰지 않았다.</label>
+      <div class="chips" data-group="6-실존이름미사용" data-type="radio" data-items="예|아니오"></div>
+      <label class="f">다른 사람의 작품을 허락 없이 내려받거나 다른 곳에 올리지 않았다.</label>
+      <div class="chips" data-group="6-허락없는공유안함" data-type="radio" data-items="예|아니오"></div>
+      <label class="f">작품 설명에 AI(SUNO) 활용을 밝혔다.</label>
+      <div class="chips" data-group="6-AI활용표기" data-type="radio" data-items="예|아니오"></div>
+    </div>
+
+    <div class="card">
+      <h2>⑥ 논술</h2>
+      <details>
+        <summary>논술 참고 자료</summary>
+        <p><b>◎ 음악저작권이란?</b><br>
+        음악을 만든 사람이 자기 음악을 복제·공연·배포·편곡 등에 쓰는 것을 허락하거나 막을 수 있는 권리이다. 녹음한 사람에게도 권리가 있어서, 새소리처럼 자연의 소리라도 다른 사람이 녹음한 파일은 허락 없이 쓰면 안 된다. 저작권법은 창작자의 권리를 보호하기 위한 제도이므로, AI를 활용하더라도 다른 사람의 창작물을 허락 없이 사용하면 안 된다. 창작자는 자신의 권리를 보호받는 동시에 타인의 저작권을 존중하는 책임을 다해야 한다.</p>
+        <p><b>◎ AI로 음악을 만들 때 생각해야 할 저작권 문제</b><br>
+        - 데이터 학습: AI가 학습한 기존 음악은 원작자의 허락을 받았는가? (현재 법정에서 다투고 있는 문제)<br>
+        - 창작자 기준: AI가 만든 곡의 저작권 수익은 누구에게 돌아가는가? (인공지능 / 사용자 / 개발사)<br>
+        - 창작성 비율: 단순 프롬프트 입력만으로 저작권을 인정받을 수 있는가?<br>
+        - 출처 표시와 이용 허락: 출처만 정확히 밝히면 다른 사람의 음원이나 소리를 사용해도 되는가?</p>
+      </details>
+      <label class="f">1. 작곡 과정에서 AI가 한 일과 자신이 한 일을 구분하여 작성하시오.</label>
+      <textarea data-key="6-논술1" class="essay" style="min-height:120px"></textarea><div class="count"></div>
+      <label class="f">2. 창작 중 겪은 어려움이나 잘못을 어떻게 해결했는지 작성하시오.</label>
+      <textarea data-key="6-논술2" class="essay" style="min-height:120px"></textarea><div class="count"></div>
+      <label class="f">3. AI가 만든 음악을 출처 없이 쓰거나 자신의 창작물인 것처럼 발표하면 어떤 문제가 생기는지 제시하시오. 그리고 이번 창작 경험을 예로 들어 저작권 보호가 왜 중요한지와 AI 작곡 도구를 올바르게 쓰는 방법을 서술하시오.</label>
+      <textarea data-key="6-논술3" class="essay" style="min-height:160px"></textarea><div class="count"></div>
+    </div>
+
+    <div class="card">
+      <div class="savebar"><button class="main" onclick="saveLesson(3)">3차시 제출</button><span class="status" id="s3"></span></div>
+      <div class="msg" id="m3"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeTerm()">
+  <div class="box"><h3 id="termTitle"></h3><p id="termBody"></p><button class="main" onclick="closeTerm()">닫기</button></div>
+</div>
+
+<script>
+/* ---------- 기본 목록 ---------- */
+var PLACES = ['연꽃테마파크','갯골생태공원','배곧생명공원','웃터골공원','옥구공원','소래산','곰솔누리숲','시화호'];
+var TOPICS = ['기후변화','탄소중립','대기오염','친환경에너지','생태계보존','습지','수질오염','폐기물처리','자원순환','토양오염','녹색소비','지속가능발전','생물다양성'];
+var SECTIONS = [
+  {k:'도입', tag:'Intro', label:'도입 [Intro]'},
+  {k:'전개', tag:'Verse', label:'전개 [Verse]'},
+  {k:'절정', tag:'Chorus', label:'절정 [Chorus & Climax]'},
+  {k:'마무리', tag:'Outro', label:'마무리 [Outro]'}
+];
+var SPEED = {'느리게':'slow','보통 빠르기':'mid-tempo','빠르게':'fast','점점 빠르게':'gradually faster','점점 느리게':'gradually slower'};
+var DYN = {'아주 세게':'very loud','세게':'loud','여리게':'soft','아주 여리게':'very soft','점점 세게':'crescendo','점점 여리게':'fade out'};
+var INSTR = {'피아노':'piano','오케스트라':'full orchestra','바이올린':'violin','첼로':'cello','플루트':'flute','클라리넷':'clarinet','어쿠스틱 기타':'acoustic guitar','일렉 기타':'electric guitar','일렉 베이스':'electric bass','신디사이저':'synthesizer','드럼':'drums','마림바':'marimba','퍼커션':'percussion','전자 비트':'electronic beat'};
+// {d} 자리에 소리의 영어 설명이 들어갑니다. (예: bubbling mudflat water)
+var NATURE = {'나오지 않음':'no field recording','배경으로 작게':'{d} clearly audible underneath','크게 강조':'{d} loud and upfront, instruments very quiet','생태 소리만':'{d} solo, no instruments'};
+// 1분 안에 4구간이 모두 끝나도록 마디 수를 정합니다. (4+8+8+4 = 24마디 ≈ 1분)
+var BARS = {'도입':4, '전개':8, '절정':8, '마무리':4};
+var ROLE_STYLE = {'도입':'opens with {d} alone','배경음':'{d} heard throughout as a constant layer','반복되는 소리를 리듬으로 활용':'{d} repeated as the main rhythm','하이라이트':'{d} loudest at the climax','마무리':'ends with {d} alone'};
+var MOOD = {'잔잔한':'calm','평화로운':'peaceful','슬픈':'sad','어두운':'dark','긴장된':'tense','희망찬':'hopeful','밝은':'bright','웅장한':'epic'};
+var GENRE = {'앰비언트':'ambient','영화음악':'cinematic','로파이':'lo-fi','오케스트라':'orchestral','전자음악':'electronic','포크':'folk','피아노 솔로':'solo piano'};
+var MUST = {'생태 소리가 처음부터 끝까지 들리게':'{d} audible from start to end','절정에서 가장 크게':'loudest at the climax','마지막은 생태 소리만 남기기':'ends with {d} alone','처음부터 끝까지 잔잔하게':'keep a calm mood throughout','갑자기 끝내지 않기':'smooth ending'};
+var RHYTHM_EN = {'규칙적':'steady regular rhythm','불규칙적':'irregular rhythm'};
+var PITCH_EN = {'높음':'high-pitched','낮음':'low-pitched','오르내림':'pitch rising and falling'};
+var DYN2_EN = {'아주 세게':'very loud','세게':'loud','여리게':'soft','아주 여리게':'very soft','점점 세게':'getting louder','점점 여리게':'getting softer'};
+var ROLE_TAGS = {'도입':['Field Recording / Ambience'],'배경음':['Field Recording / Ambience'],'반복되는 소리를 리듬으로 활용':['Field Recording / Ambience','Loop'],'하이라이트':['Field Recording / Ambience','Sound Effect'],'마무리':['Field Recording / Ambience']};
+var VOCAL = {'연주곡(보컬 없음)':'instrumental, no vocals','여성 보컬':'female vocals','남성 보컬':'male vocals','혼성 보컬':'male and female vocals'};
+var MODS = {
+  '빠르기': {'더 느리게':'slower','더 빠르게':'faster'},
+  '셈여림': {'더 여리게':'softer','더 세게':'louder','점점 세게':'crescendo','점점 여리게':'fade out'},
+  '음색(악기)': {'악기를 줄여 단순하게':'fewer instruments','악기를 더해 풍성하게':'richer arrangement','악기 바꾸기(직접 입력)':''},
+  '생태 소리': {'더 크게':'{d} louder, instruments quieter','더 작게':'{d} quieter','더 자주':'{d} more often','빼기':'no field recording'},
+  '분위기': {'더 밝게':'brighter','더 어둡게':'darker','더 긴장감 있게':'more tension','더 잔잔하게':'calmer'}
+};
+var TERMS = {
+  '음색':'소리만의 독특한 느낌이나 색깔입니다. 같은 높이의 음이라도 피아노와 플루트가 다르게 들리는 이유입니다. 예: 맑다, 거칠다, 부드럽다, 날카롭다',
+  '리듬':'소리가 길고 짧게, 일정하게 또는 불규칙하게 이어지는 흐름입니다. 똑같은 간격으로 반복되면 규칙적, 제멋대로 나오면 불규칙적입니다.',
+  '높낮이':'소리가 얼마나 높거나 낮은지입니다. 새소리는 보통 높고, 천둥은 낮습니다. 올라갔다 내려가면 오르내림입니다.',
+  '셈여림':'소리의 세고 여린 정도입니다. 아주 세게(ff), 세게(f), 여리게(p), 아주 여리게(pp)가 있고, 점점 세게(크레셴도)와 점점 여리게(디크레셴도)처럼 바뀌기도 합니다.',
+  '빠르기':'음악이 얼마나 빠르게 흘러가는지입니다. 느리게, 보통, 빠르게, 점점 빠르게, 점점 느리게처럼 바꿀 수 있습니다.',
+  '역할':'이 소리가 곡에서 맡는 일입니다. 도입(곡을 여는 소리), 배경음(뒤에서 계속 깔리는 소리), 반복되는 소리를 리듬으로 활용(같은 소리를 되풀이해 박자처럼 쓰기), 하이라이트(가장 강조되는 순간), 마무리(곡을 닫는 소리)',
+  '쓸 구간':'고른 소리에서 실제로 쓸 부분의 시작과 끝입니다. SUNO가 인식하려면 20초 이상이어야 하고, 무료 계정은 60초까지 올릴 수 있습니다.',
+  '구간':'곡을 흐름에 따라 나눈 부분입니다. 도입은 곡을 여는 부분, 전개는 이야기가 펼쳐지는 부분, 절정은 가장 강하고 중요한 부분, 마무리는 곡을 닫는 부분입니다.',
+  '형식':'곡의 구간을 어떤 순서로 배치했는지를 말합니다. 이 활동에서는 도입-전개-절정-마무리의 4구간 형식으로 곡을 짭니다.',
+  '생태 소리':'SUNO에 올려 Sample로 자른 내 생태 소리가 그 구간에서 어떻게 쓰일지 정합니다. 나오지 않음 / 배경으로 작게 / 크게 강조 / 생태 소리만(악기가 빠지고 내 소리가 주인공)',
+  '창작 의도':'그 구간에서 듣는 사람에게 전하고 싶은 느낌이나 이야기입니다. 예: 평화로운 갯벌의 아침, 다가오는 위기',
+  '테마&의미':'그림 악보에서 쓸 기호와 색이 무엇을 뜻하는지 정한 약속입니다. 예: 파란 동그라미 = 갯벌 물소리, 선이 굵을수록 세게, 검은색 네모 = 오염된 하늘',
+  '프롬프트':'AI에게 무엇을 만들지 알려 주는 지시문입니다. 웹앱이 내 응답으로 만들어 주니 복사해서 붙여 넣기만 하면 됩니다.',
+  '스타일 키워드':'곡 전체의 분위기와 장르를 알려 주는 짧은 단어입니다. 너무 많으면 AI가 헷갈리니 3~5개만 고르세요.',
+  '보컬':'노래하는 목소리입니다. 연주곡을 고르면 노래 없이 악기와 소리만으로 곡이 만들어집니다.',
+  '업로드 태그':'올린 소리가 어떤 종류인지 SUNO에 알려 주는 버튼입니다. 생태 소리는 Field Recording / Ambience(현장에서 녹음한 자연·주변 소리)를 기본으로 누릅니다. 소리를 되풀이해 리듬으로 쓰면 Loop(반복 구간), 순간 효과로 쓰면 Sound Effect(효과음)를 하나 더 누릅니다. Voice(목소리), Spoken Word(말소리), Full Song(완성곡), Song Demo(노래 초안), Instrument Stem(악기 한 파트)은 우리 소리와 맞지 않으니 누르지 않습니다.',
+  'Sample':'올린 소리의 일부분(구간)을 잘라 새 곡 안에 넣는 방법입니다. 내 생태 소리를 곡의 재료로 쓰려면 Sample을 고릅니다. 기본으로 선택된 Cover는 올린 소리를 다른 장르로 다시 만드는 기능이라, 구간을 고를 수 없고 내 소리가 그대로 남지 않을 수 있습니다.',
+  '공유 링크':'SUNO에서 만든 곡의 Share(공유) 버튼을 누르면 곡 주소(링크)를 복사할 수 있습니다. 파일을 내려받지 않아도 링크로 친구와 선생님이 곡을 들을 수 있어요. 링크는 https://suno.com/ 으로 시작합니다.',
+  'Style 칸':'SUNO 고급(Custom) 모드에서 곡의 스타일을 적는 칸입니다. 곡 전체의 분위기, 장르, 보컬을 알려 줍니다.',
+  '구간 지시':'SUNO Lyrics 칸에 넣는 구간별 지시입니다. 대괄호 [ ] 안의 내용은 노래로 부르지 않고 지시로 읽습니다. Lyrics 칸에 처음 들어 있는 [Instrumental]은 지우고 붙여 넣으세요. 연주곡이면 웹앱이 맨 위에 [Instrumental]을 넣어 줍니다. 가사를 넣고 싶으면 보컬을 고르세요.',
+  '비상업적 이용':'돈을 벌지 않고 쓰는 것입니다. 예: 수업 발표, 개인 SNS에 출처를 밝히고 올리기',
+  '상업적 이용':'돈을 벌기 위해 쓰는 것입니다. 예: 음원 판매, 수익이 나는 영상의 배경음악',
+  '출처 표시':'무엇을 사용해 만들었는지 밝히는 것입니다. 예: "AI 작곡 도구 SUNO 활용", "Made with Suno"'
+};
+
+/* ---------- 서버 연결 (미리보기에서는 이 기기에만 임시 저장) ---------- */
+var hasGAS = (typeof google !== 'undefined' && google.script && google.script.run);
+function call(fn) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  return new Promise(function(resolve, reject) {
+    if (hasGAS) {
+      var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){ reject(e && e.message ? e.message : String(e)); });
+      r[fn].apply(r, args);
+    } else {
+      setTimeout(function(){ try { resolve(mock[fn].apply(null, args)); } catch (e) { reject(e.message); } }, 150);
+    }
+  });
+}
+var mockStore = {};
+var mock = {
+  getInit: function(){ return {sounds:[{no:'1',name:'갯벌 물 빠지는 소리',place:'갯골생태공원',sec:'60',link:'https://drive.google.com/',en:'bubbling mudflat water'},{no:'2',name:'갈매기와 파도',place:'시화호',sec:'60',link:''},{no:'3',name:'숲 새소리',place:'소래산',sec:'60',link:''}]}; },
+  getSoundAudio: function(){ throw new Error('미리보기에서는 재생할 수 없습니다'); },
+  loadStudent: function(id, name){ checkIdName(id, name); var r = mockStore[id]; if (!r) return {found:false, data:{}}; if (r['이름'] !== name) throw new Error('이 학번에 저장된 이름과 다릅니다.'); return {found:true, data:r}; },
+  saveLesson: function(id, name, n, data){ checkIdName(id, name); var r = mockStore[id] || {'학번':id,'이름':name}; if (r['이름'] !== name) throw new Error('이 학번에 저장된 이름과 다릅니다.'); var c=0; Object.keys(data).forEach(function(k){ if (String(data[k]).trim()!=='') { r[k]=data[k]; c++; } }); mockStore[id]=r; return {ok:true, changed:c, time:new Date().toLocaleTimeString()}; }
+};
+function checkIdName(id, name){ if (!/^\d{5}$/.test(id)) throw new Error('학번은 숫자 5자리로 입력하세요. (예: 10101)'); if (!name) throw new Error('이름을 입력하세요.'); }
+
+/* ---------- 화면 만들기 ---------- */
+function el(tag, attrs, html) { var e = document.createElement(tag); for (var k in (attrs||{})) e.setAttribute(k, attrs[k]); if (html !== undefined) e.innerHTML = html; return e; }
+function fillChips(box, items, type) {
+  box.innerHTML = '';
+  items.forEach(function(v){
+    var lab = el('label');
+    var inp = el('input', {type:type, name:box.dataset.group, value:v});
+    lab.appendChild(inp); lab.appendChild(el('span', {}, v));
+    box.appendChild(lab);
+  });
+}
+function hintChips(box, items, onPick) {
+  items.forEach(function(v){ var s = el('span', {}, v); s.onclick = function(){ onPick(v); }; var l = el('label'); l.appendChild(s); box.appendChild(l); });
+}
+function options(obj, first) { return '<option value="">' + first + '</option>' + Object.keys(obj).map(function(k){ return '<option>' + k + '</option>'; }).join(''); }
+
+function buildSections() {
+  var box = document.getElementById('sections');
+  SECTIONS.forEach(function(s){
+    var d = el('div', {'class':'sec'});
+    d.innerHTML =
+      '<h4>' + s.label + '<button class="q" data-term="구간">?</button></h4>' +
+      '<div class="row">' +
+        '<div><label class="f">빠르기<button class="q" data-term="빠르기">?</button></label><select data-key="3-' + s.k + '-빠르기">' + options(SPEED,'고르기') + '</select></div>' +
+        '<div><label class="f">셈여림<button class="q" data-term="셈여림">?</button></label><select data-key="3-' + s.k + '-셈여림">' + options(DYN,'고르기') + '</select></div>' +
+      '</div>' +
+      '<label class="f">음색(사용 악기)<button class="q" data-term="음색">?</button></label>' +
+      '<div class="chips" data-group="3-' + s.k + '-음색" data-type="checkbox" data-items="' + Object.keys(INSTR).join('|') + '"></div>' +
+      '<input type="text" data-key="3-' + s.k + '-음색직접" placeholder="다른 악기 (영어로 쓰면 SUNO에 더 잘 전달됩니다)" style="margin-top:8px">' +
+      '<label class="f">생태 소리<button class="q" data-term="생태 소리">?</button></label><select data-key="3-' + s.k + '-생태소리">' + options(NATURE,'고르기') + '</select>' +
+      '<label class="f">창작 의도<button class="q" data-term="창작 의도">?</button></label><input type="text" data-key="3-' + s.k + '-의도" placeholder="이 구간에서 전하고 싶은 느낌">';
+    box.appendChild(d);
+  });
+}
+function buildMods() {
+  var box = document.getElementById('mods');
+  [1,2].forEach(function(i){
+    var d = el('div', {'class':'sec'});
+    d.innerHTML = '<h4>수정 ' + i + (i===2 ? ' (선택)' : '') + '</h4>' +
+      '<div class="row">' +
+        '<select data-key="4-2-수정' + i + '구간"><option value="">구간</option><option>도입</option><option>전개</option><option>절정</option><option>마무리</option><option>곡 전체</option></select>' +
+        '<select data-key="4-2-수정' + i + '요소" onchange="onModEl(' + i + ')">' + options(MODS,'음악 요소') + '</select>' +
+        '<select data-key="4-2-수정' + i + '방법" id="modHow' + i + '"><option value="">어떻게</option></select>' +
+      '</div>' +
+      '<input type="text" data-key="4-2-수정' + i + '직접" placeholder="더 자세히 (예: 피아노 대신 첼로 / with cello)" style="margin-top:8px">';
+    box.appendChild(d);
+  });
+}
+function onModEl(i, keep) {
+  var elSel = document.querySelector('[data-key="4-2-수정' + i + '요소"]');
+  var how = document.getElementById('modHow' + i);
+  var cur = keep || how.value;
+  var m = MODS[elSel.value] || {};
+  how.innerHTML = options(m, '어떻게');
+  if (cur && m.hasOwnProperty(cur)) how.value = cur;
+}
+
+/* ---------- 값 모으기 / 채우기 ---------- */
+function collect(root) {
+  var d = {};
+  root.querySelectorAll('[data-key]').forEach(function(e){ d[e.dataset.key] = (e.value || '').trim(); });
+  root.querySelectorAll('.chips[data-group]').forEach(function(g){
+    d[g.dataset.group] = Array.prototype.map.call(g.querySelectorAll('input:checked'), function(i){ return i.value; }).join(', ');
+  });
+  return d;
+}
+function collectAll() { var d = {}; [1,2,3].forEach(function(n){ var x = collect(document.getElementById('L' + n)); for (var k in x) d[k] = x[k]; }); return d; }
+function fillAll(data) {
+  document.querySelectorAll('[data-key]').forEach(function(e){
+    var k = e.dataset.key;
+    if (!data.hasOwnProperty(k)) return;
+    if (/^4-2-수정\d방법$/.test(k)) return; // 요소를 채운 뒤에 넣음
+    e.value = data[k];
+  });
+  [1,2].forEach(function(i){ onModEl(i, data['4-2-수정' + i + '방법'] || ''); });
+  document.querySelectorAll('.chips[data-group]').forEach(function(g){
+    var v = data[g.dataset.group];
+    if (v === undefined) return;
+    var set = String(v).split(', ');
+    g.querySelectorAll('input').forEach(function(i){ i.checked = set.indexOf(i.value) !== -1; });
+  });
+  countAll();
+}
+
+/* ---------- 1차시 ---------- */
+var SOUNDS = [];
+var audioUrl = null;
+function onSound(keepName) {
+  var no = document.getElementById('soundNo').value;
+  var s = SOUNDS.filter(function(x){ return String(x.no) === no; })[0];
+  var box = document.getElementById('player'), msg = document.getElementById('playMsg'), audio = document.getElementById('audio'), dl = document.getElementById('dl'), drive = document.getElementById('drive');
+  if (!s) { box.style.display = 'none'; return; }
+  if (!keepName || !document.getElementById('soundName').value) document.getElementById('soundName').value = s.name;
+  box.style.display = 'block';
+  drive.style.display = s.link ? 'inline' : 'none';
+  if (s.link) drive.href = s.link;
+  dl.style.display = 'none';
+  audio.removeAttribute('src');
+  if (!s.link) { msg.textContent = '이 소리는 아직 파일이 연결되지 않았어요.'; return; }
+  msg.textContent = '소리를 불러오는 중...';
+  call('getSoundAudio', s.no).then(function(r){
+    if (document.getElementById('soundNo').value !== String(s.no)) return;
+    var bin = atob(r.b64), arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    audioUrl = URL.createObjectURL(new Blob([arr], {type: r.mime || 'audio/mpeg'}));
+    audio.src = audioUrl;
+    dl.href = audioUrl; dl.setAttribute('download', r.fileName); dl.style.display = 'inline-block';
+    msg.textContent = '';
+  }).catch(function(e){ msg.textContent = '불러오지 못했어요. 드라이브에서 열기를 눌러 들어 보세요. (' + e + ')'; });
+}
+function toSec(t) {
+  t = String(t || '').trim(); if (!t) return null;
+  if (/^\d+$/.test(t)) return Number(t);
+  var m = t.match(/^(\d+)\s*[:：분]\s*(\d{1,2})\s*초?$/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
+}
+function checkSeg() {
+  var a = toSec(document.getElementById('segA').value), b = toSec(document.getElementById('segB').value);
+  var msg = document.getElementById('segMsg');
+  if (a === null || b === null) { msg.className = 'msg'; msg.textContent = 'SUNO가 소리를 인식하려면 20초 이상이 필요하고, 무료 계정은 60초까지 올릴 수 있습니다.'; return true; }
+  if (isNaN(a) || isNaN(b)) { msg.className = 'msg err'; msg.textContent = '0:05처럼 분:초로 쓰세요.'; return false; }
+  var len = b - a;
+  if (len < 20) { msg.className = 'msg err'; msg.textContent = '지금 ' + len + '초입니다. 20초 이상으로 늘리세요.'; return false; }
+  if (len > 60) { msg.className = 'msg err'; msg.textContent = '지금 ' + len + '초입니다. 무료 계정은 60초까지만 올릴 수 있어요.'; return false; }
+  msg.className = 'msg ok'; msg.textContent = '좋아요. ' + len + '초 구간입니다.'; return true;
+}
+function v(key) { var e = document.querySelector('[data-key="' + key + '"]'); if (e) return (e.value || '').trim(); var g = document.querySelector('.chips[data-group="' + key + '"]'); return g ? Array.prototype.map.call(g.querySelectorAll('input:checked'), function(i){ return i.value; }).join(', ') : ''; }
+function instrKo(s) { return [v('3-' + s.k + '-음색'), v('3-' + s.k + '-음색직접')].filter(Boolean).join(', '); }
+function makeScorePrompt(show) {
+  var lines = [];
+  lines.push('다음 곡 설계를 바탕으로 "그래픽 악보" 이미지를 1장 만들어 주세요.');
+  lines.push('');
+  lines.push('[형태]');
+  lines.push('- 리게티의 「아티큘레이션」 듣기 악보(라이너 베힝거 제작)처럼, 오선과 음표 대신 색깔 있는 점·선·도형·덩어리로 소리를 나타내는 추상적인 그래픽 악보로 그려 주세요.');
+  lines.push('- 풍경, 사람, 동물, 사물을 사실적으로 그리지 마세요. 흰 바탕에 기호만으로 표현합니다.');
+  lines.push('');
+  lines.push('[규칙]');
+  lines.push('- 가로축은 시간(왼쪽 → 오른쪽), 세로축은 음높이(위 = 높은 소리, 아래 = 낮은 소리)입니다.');
+  lines.push('- 셈여림은 도형의 크기와 선의 굵기로 나타냅니다. 셀수록 크고 굵게, 여릴수록 작고 가늘게.');
+  lines.push('- 빠르기와 리듬은 기호의 간격으로 나타냅니다. 빠를수록 촘촘하게, 느릴수록 넓게.');
+  lines.push('- 음색(악기)마다 서로 다른 모양과 색을 씁니다.');
+  lines.push('- 생태 소리는 정해진 기호로, 나오는 구간에만 그립니다.');
+  lines.push('- 아래 "테마&의미"의 기호·색 약속을 반드시 지켜 주세요.');
+  lines.push('- 4구간 경계는 얇은 세로 점선으로 나누고, 구간 이름(도입·전개·절정·마무리)만 위에 짧게 씁니다.');
+  lines.push('- 그림 아래에 범례(기호·색의 뜻)를 넣어 주세요. 그 밖의 글자는 넣지 않습니다.');
+  lines.push('');
+  lines.push('[곡 정보]');
+  lines.push('주제: ' + (v('1-주제') || '(비어 있음)') + ' / 장소: ' + (v('1-장소') || '(비어 있음)'));
+  lines.push('메시지: ' + (v('1-메시지') || '(비어 있음)'));
+  var feat = [v('2-음색') && '음색 ' + v('2-음색'), v('2-리듬') && '리듬 ' + v('2-리듬'), v('2-높낮이') && '높낮이 ' + v('2-높낮이'), v('2-셈여림') && '셈여림 ' + v('2-셈여림')].filter(Boolean).join(', ');
+  lines.push('생태 소리: ' + (v('2-소리이름') || '(비어 있음)') + (feat ? ' (' + feat + ')' : '') + (v('2-역할') ? ' — 곡에서의 역할: ' + v('2-역할') : ''));
+  lines.push('테마&의미: ' + (v('3-테마와의미') || '(비어 있음)'));
+  lines.push('');
+  var empty = 0;
+  SECTIONS.forEach(function(s){
+    var parts = ['빠르기: ' + (v('3-' + s.k + '-빠르기') || '-'), '셈여림: ' + (v('3-' + s.k + '-셈여림') || '-'), '음색: ' + (instrKo(s) || '-'), '생태 소리: ' + (v('3-' + s.k + '-생태소리') || '-'), '창작 의도: ' + (v('3-' + s.k + '-의도') || '-')];
+    if (!v('3-' + s.k + '-빠르기') || !v('3-' + s.k + '-셈여림') || !instrKo(s)) empty++;
+    lines.push('[' + s.k + '] ' + parts.join(' / '));
+  });
+  document.getElementById('scorePrompt').value = lines.join('\n');
+  if (show) toast(1, empty ? '빈 구간이 ' + empty + '곳 있어요. 채우면 더 정확한 그림이 나옵니다.' : '프롬프트를 만들었어요. 복사해서 쓰세요.', !!empty);
+}
+
+/* ---------- 2차시 ---------- */
+function mapList(str, dict) { return String(str || '').split(', ').filter(Boolean).map(function(k){ return dict[k] || k; }); }
+function sectionTags(s) {
+  var t = [];
+  if (v('3-' + s.k + '-빠르기')) t.push(SPEED[v('3-' + s.k + '-빠르기')]);
+  if (v('3-' + s.k + '-셈여림')) t.push(DYN[v('3-' + s.k + '-셈여림')]);
+  t = t.concat(mapList(v('3-' + s.k + '-음색'), INSTR));
+  if (v('3-' + s.k + '-음색직접')) t.push(v('3-' + s.k + '-음색직접'));
+  if (v('3-' + s.k + '-생태소리')) t.push(sd(NATURE[v('3-' + s.k + '-생태소리')]));
+  if (s.tag === 'Chorus') t.push('climax');
+  return t;
+}
+function cleanTag(x) { return String(x).replace(/[\[\]\(\)"“”]/g, '').trim(); }
+function sd(str) { return String(str || '').replace(/\{d\}/g, soundEn()); }
+function styleParts(extra) {
+  // 내 소리를 맨 앞에: 무엇이 들려야 하는지 구체적으로, 악기는 적고 조용하게
+  var p = [soundEn() + ' field recording upfront in the mix', 'complete 1-minute piece with a clear ending', 'sparse minimal arrangement', 'quiet supportive instruments'];
+  p = p.concat(mapList(v('4-분위기'), MOOD), mapList(v('4-장르'), GENRE));
+  if (v('4-스타일직접')) p = p.concat(v('4-스타일직접').split(',').map(function(x){ return x.trim(); }).filter(Boolean));
+  p.push(VOCAL[v('4-보컬')] || 'instrumental, no vocals');
+  if (ROLE_STYLE[v('2-역할')]) p.push(sd(ROLE_STYLE[v('2-역할')]));
+  var must = v('4-꼭지킬것직접') || sd(MUST[v('4-꼭지킬것')]) || '';
+  if (must) p.push(must);
+  return p.concat(extra || []).map(cleanTag).filter(Boolean);
+}
+function isInstrumental() { var vo = v('4-보컬'); return !vo || vo === '연주곡(보컬 없음)'; }
+function buildLyrics(tagMap) {
+  var lines = [], lyr = v('4-가사');
+  if (isInstrumental()) lines.push('[Instrumental]');
+  SECTIONS.forEach(function(s){
+    var extra = s.tag === 'Outro' ? ['clear ending'] : [];
+    var t = [BARS[s.k] + ' bars'].concat(tagMap[s.k], extra).map(cleanTag).filter(Boolean).join(', ');
+    lines.push('[' + s.tag + (t ? ': ' + t : '') + ']');
+    if (s.tag === 'Chorus' && lyr && !isInstrumental()) lyr.split('\n').forEach(function(l){ if (l.trim()) lines.push(l.trim()); });
+  });
+  lines.push('[End]');
+  return lines.join('\n');
+}
+function baseTagMap() { var m = {}; SECTIONS.forEach(function(s){ m[s.k] = sectionTags(s); }); return m; }
+function setCount(id, text) { document.getElementById(id).textContent = text.length + '자' + (text.length > 900 ? ' — 너무 길어요. 키워드를 줄이세요.' : ''); }
+function soundEn() {
+  var no = v('2-소리번호');
+  var s = SOUNDS.filter(function(x){ return String(x.no) === no; })[0];
+  return (s && s.en) ? s.en : (v('2-소리이름') || 'nature sound');
+}
+function sunoTime(sec) { var m = Math.floor(sec / 60), s = sec % 60; return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + '.0'; }
+function makeUpload() {
+  var parts = ['Nature field recording: ' + soundEn()];
+  var f = [RHYTHM_EN[v('2-리듬')], PITCH_EN[v('2-높낮이')], DYN2_EN[v('2-셈여림')]].filter(Boolean);
+  if (f.length) { var j = f.join(', '); parts.push(j.charAt(0).toUpperCase() + j.slice(1)); }
+  parts.push('No music, no voice');
+  document.getElementById('pUpload').value = parts.join('. ') + '.';
+  document.getElementById('pTags').value = (ROLE_TAGS[v('2-역할')] || ['Field Recording / Ambience']).join(' + ');
+  var a = v('2-구간시작'), b = v('2-구간끝');
+  var sa = toSec(a), sb = toSec(b);
+  document.getElementById('segInfo').textContent = (sa !== null && sb !== null && !isNaN(sa) && !isNaN(sb))
+    ? '자를 구간 (Selection 칸에 입력): ' + sunoTime(sa) + ' – ' + sunoTime(sb) + ' (' + (sb - sa) + '초)'
+    : '1차시 ②에서 쓸 구간을 정하지 않았어요. 20~60초로 자르세요.';
+}
+function makeSunoPrompt(show) {
+  makeUpload();
+  var map = baseTagMap();
+  var style = styleParts();
+  var styleText = style.join(', ');
+  document.getElementById('pStyle').value = styleText;
+  document.getElementById('pLyrics').value = buildLyrics(map);
+  setCount('pStyleCount', styleText);
+  if (!show) return;
+  var notes = [];
+  var kw = mapList(v('4-분위기'), MOOD).length + mapList(v('4-장르'), GENRE).length;
+  if (kw < 3 || kw > 5) notes.push('스타일 키워드를 3~5개 고르세요. (지금 ' + kw + '개)');
+  var noSec = SECTIONS.filter(function(s){ return sectionTags(s).length < 2; }).map(function(s){ return s.k; });
+  if (noSec.length) notes.push('1차시 ③의 ' + noSec.join(', ') + ' 구간이 비어 있어요. 1차시 탭에서 채우세요.');
+  var busy = SECTIONS.filter(function(s){
+    var n = v('3-' + s.k + '-생태소리'), ins = mapList(v('3-' + s.k + '-음색'), INSTR);
+    return (n === '크게 강조' || n === '생태 소리만') && (ins.length > 2 || ins.some(function(x){ return /orchestra|drums|electronic beat/.test(x); }));
+  }).map(function(s){ return s.k; });
+  if (busy.length) notes.push(busy.join(', ') + ' 구간은 내 소리를 강조하는데 악기가 많거나 커요. 악기를 1~2개로 줄이면 내 소리가 더 잘 들립니다.');
+  var cur = SOUNDS.filter(function(x){ return String(x.no) === v('2-소리번호'); })[0];
+  if (cur && !cur.en) notes.push('이 소리는 영어 설명이 없어 한국어 이름이 들어갔어요. 선생님께 알려 주세요.');
+  if (v('4-가사') && isInstrumental()) notes.push('가사를 쓰려면 보컬을 고르세요. 연주곡이면 가사는 들어가지 않습니다.');
+  if (!isInstrumental() && !v('4-가사')) notes.push('보컬을 골랐는데 가사가 비어 있어요. 가사를 쓰거나 연주곡을 고르세요.');
+  var m = document.getElementById('sunoMsg');
+  var info = isInstrumental() ? ' 연주곡입니다. 가사를 넣으려면 보컬을 고르세요.' : ' 가사가 들어간 노래입니다.';
+  m.className = 'msg' + (notes.length ? ' err' : ' ok');
+  m.textContent = (notes.length ? notes.join(' ') : '프롬프트를 만들었어요.') + info;
+  if (!v('5-곡제목')) document.getElementById('cardTitle').value = v('4-곡제목');
+  if (!v('5-소리')) document.getElementById('cardSound').value = v('2-소리이름');
+}
+function makeRevision(show) {
+  var map = baseTagMap(), extraStyle = [], ko = [], missing = false;
+  [1,2].forEach(function(i){
+    var sec = v('4-2-수정' + i + '구간'), elx = v('4-2-수정' + i + '요소'), how = v('4-2-수정' + i + '방법'), more = v('4-2-수정' + i + '직접');
+    if (!sec && !elx && !how && !more) return;
+    if (!sec || !elx || (!how && !more)) { missing = true; return; }
+    var en = [];
+    if (how && MODS[elx][how]) en.push(sd(MODS[elx][how]));
+    if (more) en.push(more);
+    if (sec === '곡 전체') extraStyle = extraStyle.concat(en); else map[sec] = map[sec].concat(en);
+    var howKo = (how && how.indexOf('직접') === -1) ? how + ' ' : '';
+    ko.push((sec === '곡 전체' ? '곡 전체' : sec + ' 구간') + '의 ' + eul(elx) + ' ' + howKo + (more ? '(' + more + ') ' : '') + '바꾼다.');
+  });
+  var msg = document.getElementById('revMsg');
+  if (!ko.length) { if (show) { msg.className = 'msg err'; msg.textContent = '수정 1의 구간, 음악 요소, 어떻게를 고르세요.'; } return; }
+  document.getElementById('revText').value = ko.join('\n');
+  var style = styleParts(extraStyle);
+  document.getElementById('rStyle').value = style.join(', ');
+  document.getElementById('rLyrics').value = buildLyrics(map);
+  if (show) { msg.className = 'msg ' + (missing ? 'err' : 'ok'); msg.textContent = missing ? '수정 2에 빈칸이 있어 수정 1만 반영했어요.' : '수정 프롬프트를 만들었어요.'; }
+}
+function hasBatchim(word) { var c = String(word || '').trim().slice(-1); if (!c) return false; var code = c.charCodeAt(0) - 0xAC00; if (code < 0 || code > 11171) return /[0-9LMNRlmnr]$/.test(c); return code % 28 !== 0; }
+function eul(w) { return w + (hasBatchim(w) ? '을' : '를'); }
+function makeCard(show) {
+  var name = document.getElementById('sname').value.trim();
+  var s1 = '이 곡은 ' + eul(v('5-소리') || '○○') + ' 활용하여 ' + eul(v('5-주제') || '○○') + ' 이야기한다.';
+  var s2 = (v('5-구간') || '○○') + '에서 ' + eul(v('5-음악요소') || '○○') + ' ' + (v('5-특징') || '○○') + (/게$/.test(v('5-특징')) ? ' 하여 ' : '하여 ') + eul(v('5-의도') || '○○') + ' 표현했다.';
+  var s3 = '이 곡을 들은 사람이 ' + eul(v('5-감정') || '○○') + ' 느끼고, ' + (v('5-바라는변화') || '○○') + ' 되기를 바란다.';
+  document.getElementById('card').value =
+    '곡 제목: ' + (v('5-곡제목') || v('4-곡제목') || '○○') + '\n' +
+    '작곡가: ' + (name || '○○') + ' (AI 작곡 도구: SUNO 활용)\n\n' +
+    '곡 해설: ' + s1 + ' ' + s2 + ' ' + s3;
+  if (show) toast(2, '작품 설명 카드를 만들었어요. 복사해서 Padlet에 올리세요.');
+}
+
+/* ---------- 제출 ---------- */
+function idName() { return { id: document.getElementById('sid').value.trim(), name: document.getElementById('sname').value.replace(/\s+/g, '') }; }
+function toast(n, text, isErr) { var m = document.getElementById('m' + n); m.className = 'msg ' + (isErr ? 'err' : 'ok'); m.textContent = text; }
+function saveLesson(n) {
+  var who = idName();
+  if (!/^\d{5}$/.test(who.id) || !who.name) { toast(n, '맨 위에 학번(숫자 5자리)과 이름을 먼저 쓰세요.', true); window.scrollTo(0, 0); return; }
+  if (n === 1) { makeScorePrompt(false); if (!checkSeg()) { toast(1, '쓸 구간을 20~60초로 고친 뒤 제출하세요.', true); return; } }
+  if (n === 2) { makeSunoPrompt(false); makeRevision(false); makeCard(false); }
+  var data = collect(document.getElementById('L' + n));
+  var empty = Object.keys(data).filter(function(k){ return !data[k] && !/직접|가사|수정2|SNS조건/.test(k); }).length;
+  toast(n, '제출 중...');
+  call('saveLesson', who.id, who.name, n, data).then(function(r){
+    document.getElementById('s' + n).textContent = '마지막 제출 ' + r.time;
+    toast(n, '제출했어요.' + (empty ? ' 빈칸 ' + empty + '개는 나중에 채워 다시 제출해도 됩니다.' : ''), false);
+  }).catch(function(e){ toast(n, '제출하지 못했어요: ' + e, true); });
+}
+function loadMe() {
+  var who = idName(), m = document.getElementById('loadMsg');
+  m.textContent = '불러오는 중...';
+  call('loadStudent', who.id, who.name).then(function(r){
+    if (r.found) {
+      fillAll(r.data);
+      [1,2,3].forEach(function(n){ var t = r.data[n + '차시 제출']; if (t) document.getElementById('s' + n).textContent = '마지막 제출 ' + t; });
+      checkSeg();
+      onSound(true);
+      m.textContent = '저장된 내용을 불러왔어요.';
+    } else { m.textContent = '처음 시작합니다. 1차시부터 차례로 쓰세요.'; }
+  }).catch(function(e){ m.textContent = e; });
+}
+
+/* ---------- 기타 ---------- */
+function showLesson(n) {
+  [1,2,3].forEach(function(i){ document.getElementById('L' + i).classList.toggle('on', i === n); document.getElementById('t' + i).classList.toggle('on', i === n); });
+  window.scrollTo(0, 0);
+}
+function copyText(id) {
+  var t = document.getElementById(id);
+  if (!t.value) { alertMsg('먼저 만들기 버튼을 누르세요.'); return; }
+  function fallback() { t.removeAttribute('readonly'); t.focus(); t.select(); t.setSelectionRange(0, t.value.length); var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} t.setAttribute('readonly', ''); alertMsg(ok ? '복사했어요.' : '자동 복사가 안 돼요. 글자를 길게 눌러 전체 선택 후 복사하세요.'); }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(function(){ alertMsg('복사했어요.'); }, fallback); else fallback();
+}
+function alertMsg(text) { document.getElementById('termTitle').textContent = '알림'; document.getElementById('termBody').textContent = text; document.getElementById('modal').classList.add('on'); }
+function openTerm(k) { document.getElementById('termTitle').textContent = k; document.getElementById('termBody').textContent = TERMS[k] || ''; document.getElementById('modal').classList.add('on'); }
+function closeTerm() { document.getElementById('modal').classList.remove('on'); }
+function countAll() { document.querySelectorAll('textarea.essay').forEach(function(t){ t.nextElementSibling.textContent = t.value.length + '자'; }); }
+
+document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('button.q'); if (b) { e.preventDefault(); openTerm(b.dataset.term); } });
+document.addEventListener('input', function(e){ if (e.target.classList && e.target.classList.contains('essay')) countAll(); });
+
+(function init(){
+  buildSections();
+  buildMods();
+  document.querySelectorAll('.chips[data-items]').forEach(function(g){ fillChips(g, g.dataset.items.split('|'), g.dataset.type); });
+  fillChips(document.getElementById('moodChips'), Object.keys(MOOD), 'checkbox');
+  fillChips(document.getElementById('genreChips'), Object.keys(GENRE), 'checkbox');
+  fillChips(document.getElementById('mustChips'), Object.keys(MUST), 'radio');
+  hintChips(document.getElementById('placeHints'), PLACES, function(p){ document.getElementById('place').value = p; });
+  hintChips(document.getElementById('topicHints'), TOPICS, function(t){ document.getElementById('topic').value = t; });
+  countAll();
+  call('getInit').then(function(r){
+    SOUNDS = r.sounds || [];
+    var sel = document.getElementById('soundNo');
+    SOUNDS.forEach(function(s){ sel.appendChild(el('option', {value:s.no}, s.no + '. ' + s.name + (s.place ? ' (' + s.place + ')' : ''))); });
+  });
+  if (!hasGAS) document.getElementById('loadMsg').textContent = '미리보기 모드입니다. 제출 내용은 새로 고치면 사라집니다.';
+})();
+</script>
+</body>
+</html>
